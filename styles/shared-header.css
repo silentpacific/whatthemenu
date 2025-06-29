@@ -28,6 +28,11 @@
     align-items: center;
     gap: 0.75rem;
     text-decoration: none;
+    transition: transform 0.3s ease;
+}
+
+.logo:hover {
+    transform: scale(1.02);
 }
 
 .logo-icon {
@@ -101,11 +106,14 @@
     font-size: 1.2rem;
     cursor: pointer;
     transition: all 0.3s ease;
+    text-decoration: none;
+    color: inherit;
 }
 
 .user-icon:hover {
     background: #e2e8f0;
     transform: scale(1.05);
+    border: 2px solid #0891b2;
 }
 
 @media (max-width: 768px) {
