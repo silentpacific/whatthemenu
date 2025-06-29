@@ -11,7 +11,9 @@
     
     <!-- Shared styles -->
     <link rel="stylesheet" href="styles/shared-header.css">
-	<link rel="stylesheet" href="styles/shared-footer.css">
+    <link rel="stylesheet" href="styles/shared-footer.css">
+<link rel="stylesheet" href="global.css">
+    
     
     <style>
         * {
@@ -288,27 +290,29 @@
     </style>
 </head>
 <body>
-    <!-- Header -->
-    <header class="header">
-        <div class="container">
-            <div class="header-content">
-                <a href="/" class="logo">
-                    <div class="logo-icon">🤔</div>
-                    <div class="logo-text">What The Menu?</div>
-                </a>
-                <nav class="nav">
-                    <a href="/#how-it-works" class="nav-link">How It Works</a>
-                    <a href="/#pricing" class="nav-link">Pricing</a>
-                </nav>
-<div class="header-actions">
-    <div class="scan-counter">
-        <span class="scans-used">0</span>/<span class="scans-limit">5</span> free scans
-    </div>
-    <a href="login.html" class="user-icon">👤</a>
-</div>
+
+<!-- Header -->
+<header class="header">
+    <div class="container">
+        <div class="header-content">
+            <a href="/" class="logo">
+                <div class="logo-icon">🤔</div>
+                <div class="logo-text">What The Menu?</div>
+            </a>
+            <nav class="nav">
+                <a href="/#how-it-works" class="nav-link">How It Works</a>
+                <a href="/#pricing" class="nav-link">Pricing</a>
+            </nav>
+            <div class="header-actions">
+                <div class="scan-counter">
+                    <span class="scans-used">0</span>/<span class="scans-limit">5</span> free scans
+                </div>
+                <a href="login.html" class="user-icon">👤</a>
             </div>
         </div>
-    </header>
+    </div>
+</header>
+
 
     <main>
         <div class="auth-container">
@@ -422,17 +426,35 @@
     </main>
 
 <!-- Footer -->
-<footer style="background: #2c3e50; color: white; text-align: center; padding: 2rem 0; margin-top: 2rem;">
-    <div style="max-width: 1200px; margin: 0 auto; padding: 0 1rem;">
-        <div style="display: flex; justify-content: center; gap: 2rem; margin-bottom: 1rem; flex-wrap: wrap;">
-            <a href="/" style="color: #bdc3c7; text-decoration: none; transition: color 0.3s;">Home</a>
-            <a href="privacy.html" style="color: #bdc3c7; text-decoration: none; transition: color 0.3s;">Privacy Policy</a>
-            <a href="terms.html" style="color: #bdc3c7; text-decoration: none; transition: color 0.3s;">Terms of Service</a>
-            <a href="contact.html" style="color: #bdc3c7; text-decoration: none; transition: color 0.3s;">Contact Us</a>
+<footer class="shared-footer">
+    <div class="footer-container">
+        <div class="footer-content">
+            <div class="footer-logo-section">
+                <div class="footer-logo">
+                    <div class="footer-logo-icon">🤔</div>
+                    <div class="footer-logo-text">What The Menu?</div>
+                </div>
+                <p class="footer-description">Never wonder what's on the menu again.</p>
+            </div>
+            <div class="footer-section">
+                <h3 class="footer-section-title">Legal</h3>
+                <a href="privacy.html" class="footer-link">Privacy Policy</a>
+                <a href="terms.html" class="footer-link">Terms of Service</a>
+                <a href="contact.html" class="footer-link">Contact</a>
+            </div>
+            <div class="footer-section">
+                <h3 class="footer-section-title">Languages</h3>
+                <span class="footer-link">English, Spanish, French, Italian, German, Japanese, Korean, Chinese</span>
+                <p class="footer-link">+ 42 more languages</p>
+            </div>
         </div>
-        <p style="margin: 0; color: #bdc3c7;">&copy; 2025 What The Menu? All rights reserved.</p>
+        <div class="footer-bottom">
+            <div class="footer-copyright">© 2025 What The Menu? All rights reserved.</div>
+            <div class="footer-security">🔒 Secure payments by Stripe</div>
+        </div>
     </div>
 </footer>
+
 
 <style>
 footer a:hover {

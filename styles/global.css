@@ -7,6 +7,10 @@
     box-sizing: border-box;
 }
 
+main {
+    margin-top: 100px; /* Space for fixed header */
+}
+
 html {
     scroll-behavior: smooth;
     font-size: 16px;
@@ -260,3 +264,50 @@ a:hover {
         font-size: 0.9rem;
     }
 }
+
+
+/* Social Login Styles */
+.social-login {
+    margin-bottom: 20px;
+}
+
+.google-btn {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #dadce0;
+    background: white;
+    color: #3c4043;
+    border-radius: 8px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.google-btn:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.divider {
+    text-align: center;
+    margin: 20px 0;
+    position: relative;
+    color: #7f8c8d;
+}
+
+.divider::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: #ecf0f1;
+}
+
+.divider span {
+    background: white;
+    padding: 0 15px;
