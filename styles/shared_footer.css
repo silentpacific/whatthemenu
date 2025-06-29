@@ -1,0 +1,50 @@
+/* Simple shared footer for auth pages */
+.simple-footer {
+    background: #2c3e50;
+    color: white;
+    text-align: center;
+    padding: 2rem 0;
+    margin-top: 2rem;
+}
+
+.simple-footer-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1rem;
+}
+
+.simple-footer-links {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+}
+
+.simple-footer-links a {
+    color: #bdc3c7;
+    text-decoration: none;
+    transition: color 0.3s ease;
+    font-weight: 500;
+}
+
+.simple-footer-links a:hover {
+    color: white;
+}
+
+.simple-footer-copyright {
+    margin: 0;
+    color: #bdc3c7;
+    font-size: 0.9rem;
+}
+
+@media (max-width: 768px) {
+    .simple-footer-links {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .simple-footer {
+        padding: 1.5rem 0;
+    }
+}
