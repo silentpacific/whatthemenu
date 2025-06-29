@@ -333,42 +333,31 @@ main {
         </main>
     </div>
 
-<footer class="footer">
-    <div class="footer-container">
-        <div class="footer-content">
-            <div class="footer-logo-section">
-                <div class="footer-logo">
-                    <div class="footer-logo-icon">🤔</div>
-                    <div class="footer-logo-text">What The Menu?</div>
-                </div>
-                <p class="footer-description">
-                    AI-powered menu translation for confident dining worldwide.
-                </p>
-            </div>
-            <div class="footer-section">
-                <h3 class="footer-section-title">Legal</h3>
-                <a href="privacy.html" class="footer-link">Privacy Policy</a>
-                <a href="terms.html" class="footer-link">Terms of Service</a>
-                <a href="contact.html" class="footer-link">Contact</a>
-            </div>
-            <div class="footer-section">
-                <h3 class="footer-section-title">Languages</h3>
-                <div class="language-list">
-                    <span class="footer-link">English, Spanish, French, Italian, German, Japanese, Korean, Chinese</span>
-                </div>
-                <p class="footer-link">+ 42 more languages</p>
-            </div>
+<!-- Footer -->
+<footer style="background: #2c3e50; color: white; text-align: center; padding: 2rem 0; margin-top: 2rem;">
+    <div style="max-width: 1200px; margin: 0 auto; padding: 0 1rem;">
+        <div style="display: flex; justify-content: center; gap: 2rem; margin-bottom: 1rem; flex-wrap: wrap;">
+            <a href="/" style="color: #bdc3c7; text-decoration: none; transition: color 0.3s;">Home</a>
+            <a href="privacy.html" style="color: #bdc3c7; text-decoration: none; transition: color 0.3s;">Privacy Policy</a>
+            <a href="terms.html" style="color: #bdc3c7; text-decoration: none; transition: color 0.3s;">Terms of Service</a>
+            <a href="contact.html" style="color: #bdc3c7; text-decoration: none; transition: color 0.3s;">Contact Us</a>
         </div>
-        <div class="footer-bottom">
-            <div class="footer-copyright">
-                © 2025 What The Menu? All rights reserved.
-            </div>
-            <div class="footer-security">
-                🔒 Secure payments by Stripe
-            </div>
-        </div>
+        <p style="margin: 0; color: #bdc3c7;">&copy; 2025 What The Menu? All rights reserved.</p>
     </div>
 </footer>
+
+<style>
+footer a:hover {
+    color: white !important;
+}
+
+@media (max-width: 768px) {
+    footer div[style*="display: flex"] {
+        flex-direction: column !important;
+        gap: 1rem !important;
+    }
+}
+</style>
 
     <script>
         // Handle form submission

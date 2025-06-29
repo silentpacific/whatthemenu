@@ -350,18 +350,31 @@
         </div>
     </main>
 
-    <!-- Footer -->
-<footer class="simple-footer">
-    <div class="simple-footer-container">
-        <div class="simple-footer-links">
-            <a href="/">Home</a>
-            <a href="privacy.html">Privacy Policy</a>
-            <a href="terms.html">Terms of Service</a>
-            <a href="contact.html">Contact Us</a>
+<!-- Footer -->
+<footer style="background: #2c3e50; color: white; text-align: center; padding: 2rem 0; margin-top: 2rem;">
+    <div style="max-width: 1200px; margin: 0 auto; padding: 0 1rem;">
+        <div style="display: flex; justify-content: center; gap: 2rem; margin-bottom: 1rem; flex-wrap: wrap;">
+            <a href="/" style="color: #bdc3c7; text-decoration: none; transition: color 0.3s;">Home</a>
+            <a href="privacy.html" style="color: #bdc3c7; text-decoration: none; transition: color 0.3s;">Privacy Policy</a>
+            <a href="terms.html" style="color: #bdc3c7; text-decoration: none; transition: color 0.3s;">Terms of Service</a>
+            <a href="contact.html" style="color: #bdc3c7; text-decoration: none; transition: color 0.3s;">Contact Us</a>
         </div>
-        <p class="simple-footer-copyright">&copy; 2025 What The Menu? All rights reserved.</p>
+        <p style="margin: 0; color: #bdc3c7;">&copy; 2025 What The Menu? All rights reserved.</p>
     </div>
 </footer>
+
+<style>
+footer a:hover {
+    color: white !important;
+}
+
+@media (max-width: 768px) {
+    footer div[style*="display: flex"] {
+        flex-direction: column !important;
+        gap: 1rem !important;
+    }
+}
+</style>
 
     <!-- Scripts -->
     <script src="js/config.js"></script>
