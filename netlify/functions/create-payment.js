@@ -2,23 +2,26 @@
 
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
-// Subscription plans configuration
-const SUBSCRIPTION_PLANS = {
-    'food_explorer_monthly': {
-        name: 'Food Explorer',
-        amount: 999, // $9.99 in cents
+// One-time pass purchases (not subscriptions)
+const PASS_PLANS = {
+    'daily_pass': {
+        name: 'Daily Pass',
+        amount: 100, // $1.00 in cents
         currency: 'usd',
-        interval: 'month',
-        features: ['Unlimited scans', 'Advanced AI', '50+ languages', 'Dietary info']
+        type: 'one_time',
+        access_duration: 24, // hours
+        description: '24-hour unlimited menu scanning access'
     },
-    'travel_pro_yearly': {
-        name: 'Travel Pro',
-        amount: 9900, // $99.00 in cents
+    'weekly_pass': {
+        name: 'Weekly Pass', 
+        amount: 500, // $5.00 in cents
         currency: 'usd',
-        interval: 'year',
-        features: ['Everything in Food Explorer', 'Offline mode', 'Priority support']
+        type: 'one_time',
+        access_duration: 168, // hours (7 days)
+        description: '7-day unlimited menu scanning access'
     }
 };
+
 
 /**
  * Validate environment variables
@@ -38,8 +41,8 @@ function validateEnvironment() {
 function validateRequest(data) {
     const { planId, email } = data;
 
-    if (!planId || !SUBSCRIPTION_PLANS[planId]) {
-        throw new Error('Invalid subscription plan');
+    if (!planId || !PASS_PLANS[planId]) {
+        throw new Error('Invalid pass type');
     }
 
     if (!email || !isValidEmail(email)) {
@@ -93,7 +96,7 @@ async function getOrCreateCustomer(email, name = null) {
  * Create payment intent for subscription
  */
 async function createPaymentIntent(customer, planId, metadata = {}) {
-    const plan = SUBSCRIPTION_PLANS[planId];
+    const plan = PASS_PLANS[planId]; // Changed from SUBSCRIPTION_PLANS
     
     try {
         const paymentIntent = await stripe.paymentIntents.create({
@@ -106,10 +109,13 @@ async function createPaymentIntent(customer, planId, metadata = {}) {
             metadata: {
                 plan_id: planId,
                 plan_name: plan.name,
+                access_type: 'temporary_access',
+                access_duration_hours: plan.access_duration,
                 customer_email: customer.email,
+                purchase_type: 'one_time_pass',
                 ...metadata
             },
-            description: `${plan.name} subscription - What The Menu?`
+            description: `${plan.name} - ${plan.description}`
         });
 
         return paymentIntent;

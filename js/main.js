@@ -464,3 +464,25 @@ if (CONFIG.DEBUG) {
     window.resetDemo = () => window.menuScanner?.resetUpload();
     console.log('🎯 Main app loaded. Try window.resetDemo() to reset the upload demo.');
 }
+
+
+// Pricing button functions
+function scrollToUpload() {
+    const uploadArea = document.getElementById('upload-area');
+    if (uploadArea) {
+        uploadArea.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // Optional: highlight the upload area briefly
+        uploadArea.style.borderColor = '#0891b2';
+        setTimeout(() => {
+            uploadArea.style.borderColor = '#cbd5e1';
+        }, 2000);
+    }
+}
+
+async function buyDailyPass() {
+    await initiatePurchase('daily_pass', 'Daily Pass - $1 for unlimited scans (24 hours)');
+}
+
+async function buyWeeklyPass() {
+    await initiatePurchase('weekly_pass', 'Weekly Pass - $5 for unlimited scans (7 days)');
+}
