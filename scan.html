@@ -202,10 +202,10 @@
             <input type="file" id="file-input" class="hidden-input" accept="image/*" onchange="handleFileSelect(event)">
             
 			<div class="demo-controls">
-			    <button id="scan-btn" class="scan-button" disabled>
-			        <span class="btn-text">Scan Menu</span>
-			        <span class="btn-icon">🔍</span>
-			    </button>
+<button id="scan-btn" class="scan-button" onclick="handleScanClick()" disabled>
+    <span class="btn-text">Scan Menu</span>
+    <span class="btn-icon">🔍</span>
+</button>
 			</div>
             
             <!-- Processing State -->
@@ -254,8 +254,8 @@
 
     <script>
         // Replace with your actual Supabase credentials
-        const SUPABASE_URL = 'YOUR_SUPABASE_URL_HERE';
-        const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY_HERE';
+        const SUPABASE_URL = 'https://tibeuchezcksymjivgwr.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRpYmV1Y2hlemNrc3ltaml2Z3dyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTEwMTQyNDAsImV4cCI6MjA2NjU5MDI0MH0.hx8ocUMZQaAvo50L_KtI9FuH4lklAT5N1th-H4njVrw';
         
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         let currentUser = null;
@@ -345,12 +345,41 @@
         }
         
         // Handle file selection
-        function handleFileSelect(event) {
-            const file = event.target.files[0];
-            if (file) {
-                handleFile(file);
-            }
-        }
+// Handle file selection
+function handleFileSelect(event) {
+    const file = event.target.files[0];
+    if (file) {
+        // Update upload area to show file is selected
+        const uploadArea = document.getElementById('upload-area');
+        uploadArea.innerHTML = `
+            <span class="upload-icon">✅</span>
+            <div class="upload-text">File selected: ${file.name}</div>
+            <div class="upload-subtext">Click "Scan Menu" to process</div>
+        `;
+        
+        // Enable and update scan button
+        const scanBtn = document.getElementById('scan-btn');
+        scanBtn.disabled = false;
+        scanBtn.style.background = 'linear-gradient(135deg, #27ae60 0%, #2ecc71 100%)';
+    }
+}
+
+
+// Handle scan button click
+function handleScanClick() {
+    const fileInput = document.getElementById('file-input');
+    
+    if (fileInput.files && fileInput.files[0]) {
+        // File is selected, process it
+        handleFile(fileInput.files[0]);
+    } else {
+        // No file selected, open file picker
+        triggerFileInput();
+    }
+}
+
+
+
         
         // Open camera (for mobile devices)
         function openCamera() {
@@ -433,7 +462,7 @@
                     throw error;
                 }
                 
-                redirectToLogin();
+                window.location.href = 'index.html';
                 
             } catch (error) {
                 console.error('Logout error:', error);
