@@ -206,3 +206,49 @@
         font-size: 0.8rem;
     }
 }
+
+/* Scan counter and user icon */
+.scan-counter {
+    font-family: 'Nunito', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #64748b;
+    margin-right: 1rem;
+}
+
+.scans-used {
+    color: #0891b2;
+    font-weight: 800;
+}
+
+.user-icon {
+    width: 40px;
+    height: 40px;
+    background: #f1f5f9;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.user-icon:hover {
+    background: #e2e8f0;
+    border-color: #0891b2;
+    transform: scale(1.05);
+}
+
+@media (max-width: 768px) {
+    .scan-counter {
+        display: none;
+    }
+    
+    .user-icon {
+        width: 35px;
+        height: 35px;
+        font-size: 1rem;
+    }
+}
