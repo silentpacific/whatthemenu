@@ -1,0 +1,31 @@
+{
+  "name": "what-the-menu",
+  "version": "1.0.0",
+  "description": "AI-powered menu scanner and translator",
+  "main": "index.html",
+  "scripts": {
+    "dev": "netlify dev",
+    "build": "echo 'Static site - no build needed'",
+    "deploy": "netlify deploy --prod"
+  },
+  "keywords": [
+    "menu",
+    "translation",
+    "ai",
+    "food",
+    "travel",
+    "restaurant"
+  ],
+  "author": "What The Menu Team",
+  "license": "MIT",
+  "dependencies": {
+    "openai": "^4.20.1",
+    "stripe": "^14.7.0"
+  },
+  "devDependencies": {
+    "netlify-cli": "^17.10.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

@@ -1,0 +1,273 @@
+/* styles/pricing.css - Pricing section */
+.pricing-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2rem;
+    margin: 3rem 0;
+    align-items: stretch;
+}
+
+.pricing-card {
+    background: white;
+    border-radius: 24px;
+    padding: 2.5rem 2rem;
+    box-shadow: 0 8px 30px rgba(8, 145, 178, 0.1);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    border: 2px solid transparent;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    text-align: center;
+}
+
+.pricing-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(135deg, #0891b2, #06b6d4);
+}
+
+.pricing-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 12px 40px rgba(8, 145, 178, 0.15);
+}
+
+.pricing-card.popular {
+    border-color: #0891b2;
+    transform: scale(1.05);
+    box-shadow: 0 15px 50px rgba(8, 145, 178, 0.2);
+}
+
+.pricing-card.popular:hover {
+    transform: scale(1.05) translateY(-8px);
+}
+
+.popular-badge {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: linear-gradient(135deg, #f97316, #fb923c);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
+}
+
+.plan-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    margin: 0 auto 1.5rem;
+    box-shadow: 0 6px 20px rgba(8, 145, 178, 0.2);
+    background: linear-gradient(135deg, #0891b2, #06b6d4);
+    transition: all 0.3s ease;
+}
+
+.pricing-card:hover .plan-icon {
+    transform: scale(1.1);
+    box-shadow: 0 8px 25px rgba(8, 145, 178, 0.3);
+}
+
+.plan-name {
+    font-family: 'Nunito', sans-serif;
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #1e293b;
+    margin-bottom: 0.5rem;
+}
+
+.plan-price {
+    margin-bottom: 1.5rem;
+}
+
+.price-amount {
+    font-family: 'Nunito', sans-serif;
+    font-size: 2.5rem;
+    font-weight: 900;
+    color: #1e293b;
+    line-height: 1;
+    display: block;
+}
+
+.price-period {
+    font-size: 1rem;
+    color: #64748b;
+    font-weight: 600;
+    margin-left: 0.25rem;
+}
+
+.price-note {
+    font-size: 0.9rem;
+    color: #f97316;
+    font-weight: 600;
+    margin-top: 0.5rem;
+    display: block;
+}
+
+.plan-features {
+    list-style: none;
+    margin-bottom: 2rem;
+    text-align: left;
+    flex-grow: 1;
+}
+
+.plan-features li {
+    margin-bottom: 0.75rem;
+    font-size: 1rem;
+    color: #64748b;
+    font-weight: 500;
+    padding-left: 0.5rem;
+    position: relative;
+}
+
+.plan-features li::before {
+    content: '✓';
+    color: #10b981;
+    font-weight: 900;
+    position: absolute;
+    left: -1rem;
+    top: 0;
+}
+
+.plan-button {
+    width: 100%;
+    padding: 1rem 2rem;
+    border: none;
+    border-radius: 50px;
+    font-family: 'Nunito', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: auto;
+    text-transform: none;
+    letter-spacing: 0.25px;
+}
+
+.plan-button.primary {
+    background: linear-gradient(135deg, #0891b2, #06b6d4);
+    color: white;
+    box-shadow: 0 6px 20px rgba(8, 145, 178, 0.3);
+}
+
+.plan-button.primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(8, 145, 178, 0.4);
+}
+
+.plan-button.secondary {
+    background: transparent;
+    color: #0891b2;
+    border: 2px solid #0891b2;
+}
+
+.plan-button.secondary:hover {
+    background: #0891b2;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(8, 145, 178, 0.3);
+}
+
+/* Special styling for popular card */
+.pricing-card.popular .plan-icon {
+    background: linear-gradient(135deg, #f97316, #fb923c);
+    box-shadow: 0 6px 20px rgba(249, 115, 22, 0.3);
+}
+
+.pricing-card.popular:hover .plan-icon {
+    box-shadow: 0 8px 25px rgba(249, 115, 22, 0.4);
+}
+
+/* Mobile Responsive */
+@media (max-width: 1024px) {
+    .pricing-cards {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+        max-width: 400px;
+        margin: 2rem auto;
+    }
+    
+    .pricing-card.popular {
+        transform: none;
+        order: -1;
+    }
+    
+    .pricing-card.popular:hover {
+        transform: translateY(-8px);
+    }
+}
+
+@media (max-width: 768px) {
+    .pricing-card {
+        padding: 2rem 1.5rem;
+    }
+    
+    .plan-icon {
+        width: 50px;
+        height: 50px;
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .plan-name {
+        font-size: 1.3rem;
+    }
+    
+    .price-amount {
+        font-size: 2rem;
+    }
+    
+    .plan-features li {
+        font-size: 0.95rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .plan-button {
+        padding: 0.875rem 1.5rem;
+        font-size: 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .pricing-card {
+        padding: 1.5rem 1rem;
+    }
+    
+    .popular-badge {
+        top: 0.5rem;
+        right: 0.5rem;
+        padding: 0.375rem 0.75rem;
+        font-size: 0.7rem;
+    }
+    
+    .plan-icon {
+        width: 45px;
+        height: 45px;
+        font-size: 1.3rem;
+    }
+    
+    .plan-name {
+        font-size: 1.2rem;
+    }
+    
+    .price-amount {
+        font-size: 1.8rem;
+    }
+    
+    .plan-features li {
+        font-size: 0.9rem;
+    }
+}

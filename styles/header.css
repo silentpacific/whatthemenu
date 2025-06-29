@@ -1,0 +1,208 @@
+/* styles/header.css - Header and navigation styles */
+
+.header {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(8, 145, 178, 0.1);
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    transition: all 0.3s ease;
+}
+
+.header-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 0;
+    min-height: 80px;
+}
+
+/* Logo */
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    text-decoration: none;
+    transition: transform 0.3s ease;
+}
+
+.logo:hover {
+    transform: scale(1.05);
+}
+
+.logo-icon {
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, #0891b2, #06b6d4);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    box-shadow: 0 4px 12px rgba(8, 145, 178, 0.3);
+    transition: all 0.3s ease;
+}
+
+.logo:hover .logo-icon {
+    box-shadow: 0 6px 20px rgba(8, 145, 178, 0.4);
+    transform: translateY(-2px);
+}
+
+.logo-text {
+    font-family: 'Nunito', sans-serif;
+    font-size: 1.6rem;
+    font-weight: 900;
+    color: #0891b2;
+    letter-spacing: -0.5px;
+}
+
+/* Navigation */
+.nav {
+    display: flex;
+    gap: 2rem;
+    align-items: center;
+}
+
+.nav-link {
+    font-family: 'Nunito', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #64748b;
+    text-decoration: none;
+    padding: 0.5rem 1rem;
+    border-radius: 24px;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.nav-link:hover {
+    color: #0891b2;
+    background: rgba(8, 145, 178, 0.1);
+    transform: translateY(-1px);
+}
+
+.nav-link::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 50%;
+    width: 0;
+    height: 2px;
+    background: linear-gradient(135deg, #0891b2, #06b6d4);
+    transition: all 0.3s ease;
+    transform: translateX(-50%);
+}
+
+.nav-link:hover::after {
+    width: 80%;
+}
+
+/* Header Actions */
+.header-actions {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+/* Mobile Menu Toggle */
+.mobile-menu-toggle {
+    display: none;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: #64748b;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.mobile-menu-toggle:hover {
+    background: rgba(8, 145, 178, 0.1);
+    color: #0891b2;
+}
+
+/* Scrolled Header */
+.header.scrolled {
+    background: rgba(255, 255, 255, 0.98);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .header-content {
+        padding: 0.75rem 0;
+        min-height: 70px;
+    }
+    
+    .logo-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 1.5rem;
+    }
+    
+    .logo-text {
+        font-size: 1.4rem;
+    }
+    
+    .nav {
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: rgba(255, 255, 255, 0.98);
+        backdrop-filter: blur(20px);
+        flex-direction: column;
+        padding: 1rem;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        border-top: 1px solid rgba(8, 145, 178, 0.1);
+    }
+    
+    .nav.active {
+        display: flex;
+    }
+    
+    .nav-link {
+        width: 100%;
+        text-align: center;
+        padding: 1rem;
+        border-radius: 12px;
+    }
+    
+    .header-actions {
+        gap: 0.5rem;
+    }
+    
+    .header-actions .btn-primary,
+    .header-actions .btn-secondary {
+        padding: 0.5rem 1rem;
+        font-size: 0.9rem;
+    }
+    
+    .mobile-menu-toggle {
+        display: block;
+    }
+}
+
+@media (max-width: 480px) {
+    .header-content {
+        min-height: 60px;
+    }
+    
+    .logo-text {
+        font-size: 1.2rem;
+    }
+    
+    .header-actions .btn-secondary {
+        display: none;
+    }
+    
+    .header-actions .btn-primary {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.8rem;
+    }
+}
