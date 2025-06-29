@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign In - What The Menu?</title>
+    <meta name="description" content="Sign in to your What The Menu? account to access premium features and unlimited menu translations.">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <!-- Shared styles -->
+    <link rel="stylesheet" href="styles/shared-header.css">
+    <link rel="stylesheet" href="styles/shared-footer.css">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Nunito', sans-serif;
+            line-height: 1.6;
+            color: #1e293b;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1.5rem;
+        }
+        
+        main {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 100px 1rem 2rem;
+        }
+        
+        .auth-container {
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(8, 145, 178, 0.15);
+            overflow: hidden;
+            max-width: 400px;
+            width: 100%;
+        }
+        
+        .auth-header {
+            background: linear-gradient(135deg, #0891b2, #06b6d4);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+        
+        .auth-icon {
+            width: 60px;
+            height: 60px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            margin: 0 auto 1rem;
+        }
+        
+        .auth-title {
+            font-size: 1.8rem;
+            font-weight: 900;
+            margin-bottom: 0.5rem;
+        }
+        
+        .auth-subtitle {
+            opacity: 0.9;
+            font-weight: 500;
+        }
+        
+        .auth-form {
+            padding: 2rem;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 700;
+            color: #374151;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 0.875rem 1rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-family: 'Nunito', sans-serif;
+            transition: all 0.3s ease;
+            background: #f9fafb;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: #0891b2;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(8, 145, 178, 0.1);
+        }
+        
+        .form-input:invalid {
+            border-color: #ef4444;
+        }
+        
+        .submit-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #0891b2, #06b6d4);
+            color: white;
+            border: none;
+            padding: 1rem;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 800;
+            font-family: 'Nunito', sans-serif;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 1rem;
+        }
+        
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(8, 145, 178, 0.3);
+        }
+        
+        .submit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .divider {
+            text-align: center;
+            margin: 1.5rem 0;
+            position: relative;
+        }
+        
+        .divider::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: #e5e7eb;
+        }
+        
+        .divider span {
+            background: white;
+            padding: 0 1rem;
+            color: #6b7280;
+            font-weight: 600;
+        }
+        
+        .auth-links {
+            text-align: center;
+        }
+        
+        .auth-link {
+            color: #0891b2;
+            text-decoration: none;
+            font-weight: 700;
+            transition: color 0.3s ease;
+        }
+        
+        .auth-link:hover {
+            color: #0e7490;
+            text-decoration: underline;
+        }
+        
+        .forgot-password {
+            text-align: center;
+            margin-top: 1rem;
+        }
+        
+        .forgot-password a {
+            color: #6b7280;
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+        
+        .forgot-password a:hover {
+            color: #0891b2;
+            text-decoration: underline;
+        }
+        
+        .error-message {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #dc2626;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            font-weight: 600;
+            display: none;
+        }
+        
+        .success-message {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            color: #166534;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            font-weight: 600;
+            display: none;
+        }
+        
+        .loading {
+            pointer-events: none;
+            opacity: 0.7;
+        }
+        
+        .loading .submit-btn::after {
+            content: '';
+            width: 20px;
+            height: 20px;
+            margin-left: 0.5rem;
+            border: 2px solid transparent;
+            border-top: 2px solid white;
+            border-radius: 50%;
+            display: inline-block;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        @media (max-width: 480px) {
+            .auth-container {
+                margin: 1rem;
+                max-width: none;
+            }
+            
+            .auth-header {
+                padding: 1.5rem;
+            }
+            
+            .auth-title {
+                font-size: 1.5rem;
+            }
+            
+            .auth-form {
+                padding: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <a href="/" class="logo">
+                    <div class="logo-icon">🤔</div>
+                    <div class="logo-text">What The Menu?</div>
+                </a>
+                <nav class="nav">
+                    <a href="/#how-it-works" class="nav-link">How It Works</a>
+                    <a href="/#pricing" class="nav-link">Pricing</a>
+                </nav>
+                <div class="header-actions">
+                    <div class="scan-counter">
+                        <span class="scans-used">0</span>/<span class="scans-limit">5</span> free scans
+                    </div>
+                    <div class="user-icon">👤</div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <div class="auth-container">
+            <div class="auth-header">
+                <div class="auth-icon">🔐</div>
+                <h1 class="auth-title">Welcome Back</h1>
+                <p class="auth-subtitle">Sign in to access your unlimited scans</p>
+            </div>
+            
+            <form class="auth-form" id="loginForm">
+                <div class="error-message" id="errorMessage"></div>
+                <div class="success-message" id="successMessage"></div>
+                
+                <div class="form-group">
+                    <label for="email" class="form-label">Email Address</label>
+                    <input 
+                        type="email" 
+                        id="email" 
+                        name="email" 
+                        class="form-input" 
+                        placeholder="your@email.com"
+                        required 
+                        autocomplete="email"
+                    >
+                </div>
+                
+                <div class="form-group">
+                    <label for="password" class="form-label">Password</label>
+                    <input 
+                        type="password" 
+                        id="password" 
+                        name="password" 
+                        class="form-input" 
+                        placeholder="Your password"
+                        required 
+                        autocomplete="current-password"
+                        minlength="8"
+                    >
+                </div>
+                
+                <button type="submit" class="submit-btn" id="submitBtn">
+                    Sign In
+                </button>
+                
+                <div class="forgot-password">
+                    <a href="forgot-password.html">Forgot your password?</a>
+                </div>
+                
+                <div class="divider">
+                    <span>Don't have an account?</span>
+                </div>
+                
+                <div class="auth-links">
+                    <a href="register.html" class="auth-link">Create Account</a>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-content">
+                <div class="footer-logo-section">
+                    <div class="footer-logo">
+                        <div class="footer-logo-icon">🤔</div>
+                        <div class="footer-logo-text">What The Menu?</div>
+                    </div>
+                    <p class="footer-description">
+                        Never wonder what's on the menu again.
+                    </p>
+                </div>
+                <div class="footer-section">
+                    <h3 class="footer-section-title">Legal</h3>
+                    <a href="privacy.html" class="footer-link">Privacy Policy</a>
+                    <a href="terms.html" class="footer-link">Terms of Service</a>
+                    <a href="contact.html" class="footer-link">Contact</a>
+                </div>
+                <div class="footer-section">
+                    <h3 class="footer-section-title">Languages</h3>
+                    <div class="language-list">
+                        <span class="footer-link">English, Spanish, French, Italian, German, Japanese, Korean, Chinese</span>
+                    </div>
+                    <p class="footer-link">+ 42 more languages</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <div class="footer-copyright">
+                    © 2025 What The Menu? All rights reserved.
+                </div>
+                <div class="footer-security">
+                    🔒 Secure payments by Stripe
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="js/config.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/user-tracking.js"></script>
+    
+    <script>
+        // Login form handling
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submitBtn');
+            const errorMessage = document.getElementById('errorMessage');
+            const successMessage = document.getElementById('successMessage');
+            const formContainer = document.querySelector('.auth-form');
+            
+            // Clear previous messages
+            errorMessage.style.display = 'none';
+            successMessage.style.display = 'none';
+            
+            // Get form data
+            const formData = new FormData(this);
+            const email = formData.get('email');
+            const password = formData.get('password');
+            
+            // Basic validation
+            if (!email || !password) {
+                showError('Please fill in all fields');
+                return;
+            }
+            
+            // Show loading state
+            formContainer.classList.add('loading');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Signing In...';
+            
+            try {
+                // TODO: Replace with actual authentication API call
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    // Success
+                    showSuccess('Login successful! Redirecting...');
+                    
+                    // Store user session
+                    localStorage.setItem('user_token', data.token);
+                    localStorage.setItem('user_data', JSON.stringify(data.user));
+                    
+                    // Redirect to dashboard or original page
+                    setTimeout(() => {
+                        const returnUrl = new URLSearchParams(window.location.search).get('return') || '/';
+                        window.location.href = returnUrl;
+                    }, 1500);
+                    
+                } else {
+                    throw new Error(data.error || 'Login failed');
+                }
+                
+            } catch (error) {
+                console.error('Login error:', error);
+                showError(error.message || 'Login failed. Please check your credentials and try again.');
+            } finally {
+                // Reset button state
+                formContainer.classList.remove('loading');
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Sign In';
+            }
+            
+            function showError(message) {
+                errorMessage.textContent = message;
+                errorMessage.style.display = 'block';
+                errorMessage.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            
+            function showSuccess(message) {
+                successMessage.textContent = message;
+                successMessage.style.display = 'block';
+                successMessage.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        });
+
+        // Update scan counter on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.userTracker) {
+                userTracker.updateScanCounterUI();
+            }
+        });
+    </script>
+</body>
+</html>

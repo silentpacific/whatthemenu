@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Privacy Policy - What The Menu?</title>
     <meta name="description" content="Privacy policy for What The Menu? - AI-powered menu translation app. Learn how we protect your data and images.">
+
+    <link rel="stylesheet" href="styles/shared-header.css">
+    <link rel="stylesheet" href="styles/shared-footer.css">
+
     <style>
         * {
             margin: 0;
@@ -62,13 +66,13 @@
             opacity: 0.8;
         }
         
-        main {
-            background: white;
-            margin: 2rem 0;
-            padding: 2rem;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-        }
+main {
+    background: white;
+    margin: 100px 0 2rem 0; /* Changed this line */
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+}
         
         h1 {
             color: #2c3e50;
@@ -160,35 +164,53 @@
             color: white;
         }
         
-        @media (max-width: 768px) {
-            .nav-links {
-                flex-direction: column;
-                gap: 1rem;
-            }
-            
-            .footer-links {
-                flex-direction: column;
-                gap: 1rem;
-            }
-            
-            h1 {
-                font-size: 2rem;
-            }
-        }
+@media (max-width: 768px) {
+    .nav-links {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .footer-links {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    h1 {
+        font-size: 2rem;
+    }
+    
+    .contact-form {
+        padding: 1rem;
+    }
+    
+    main {
+        margin: 80px 0 2rem 0;
+    }
+}
+
     </style>
 </head>
 <body>
-    <header>
-        <nav>
-            <div class="logo">What The Menu?</div>
-            <ul class="nav-links">
-                <li><a href="/">Home</a></li>
-                <li><a href="/privacy.html">Privacy</a></li>
-                <li><a href="/terms.html">Terms</a></li>
-                <li><a href="/contact.html">Contact</a></li>
-            </ul>
-        </nav>
-    </header>
+<header class="header">
+    <div class="container">
+        <div class="header-content">
+            <div class="logo">
+                <div class="logo-icon">🤔</div>
+                <div class="logo-text">What The Menu?</div>
+            </div>
+            <nav class="nav">
+                <a href="#how-it-works" class="nav-link">How It Works</a>
+                <a href="#pricing" class="nav-link">Pricing</a>
+            </nav>
+            <div class="header-actions">
+                <div class="scan-counter">
+                    <span class="scans-used">0</span>/<span class="scans-limit">3</span> free scans
+                </div>
+                <div class="user-icon">👤</div>
+            </div>
+        </div>
+    </div>
+</header>
 
     <div class="container">
         <main>
@@ -203,66 +225,79 @@
             <p>We collect information to provide our AI-powered menu translation service effectively while protecting your privacy:</p>
             
             <h3>Images you upload</h3>
-            <p>When you scan a menu photo, we temporarily process your image using artificial intelligence. <strong>Your images are processed solely for translation purposes and are automatically deleted within 30 days.</strong> We use OpenAI's services to analyze your photos, which involves securely transmitting your images to OpenAI's servers for AI processing.</p>
+            <p><strong>We do not store your images on our servers.</strong> When you scan a menu photo, we securely transmit your image directly to our AI processing partners (including OpenAI, Google Gemini, or Anthropic Claude) for real-time translation. Your images are processed solely for translation purposes and are handled according to our AI partners' data processing policies. We do not retain, save, or store any images you upload to our service.</p>
             
-            <h3>Account information (optional)</h3>
-            <p>Account creation is entirely optional. If you choose to create an account, we collect your email address and password to provide enhanced features like translation history. You can use our core translation features without any account.</p>
+            <h3>Account information (required for paid features)</h3>
+            <p><strong>Account creation is mandatory if you are purchasing any of our paid passes.</strong> This is the only way you can utilize the features we provide on our paid accounts. We collect your email address and password to provide enhanced features like translation history, payment processing, and access to premium functionalities. You can use our free tier features without creating an account.</p>
             
-            <h3>Usage information</h3>
-            <p>We collect basic technical information including your IP address, browser type, and app usage patterns to improve our service, prevent fraud, and ensure security. This data is automatically collected and helps us optimize performance.</p>
+            <h3>Usage and location information</h3>
+            <p>We collect technical information to improve our service and for marketing purposes:</p>
+            <ul>
+                <li><strong>IP Address:</strong> Automatically collected for security and fraud prevention</li>
+                <li><strong>Anonymous Location Data:</strong> We track general geographic regions where our service is being used</li>
+                <li><strong>Browser and Device Information:</strong> Technical details to optimize performance</li>
+                <li><strong>Usage Patterns:</strong> How you interact with our app to improve user experience</li>
+            </ul>
+            <p>We use this location and usage data for marketing purposes and to improve the quality of our service, including understanding which regions use our service most and optimizing our AI translation models for different geographic markets.</p>
 
             <h2>How we use your information</h2>
             <p><strong>Legal basis (GDPR):</strong> We process your data based on your explicit consent for AI analysis and our legitimate interest in providing and improving our service.</p>
             
             <ul>
-                <li><strong>AI Image Processing:</strong> Your uploaded images are processed using OpenAI's AI services to provide menu translations</li>
-                <li><strong>Service Improvement:</strong> We analyze usage patterns to enhance translation accuracy and user experience</li>
+                <li><strong>AI Image Processing:</strong> Your uploaded images are transmitted in real-time to AI services (OpenAI, Google Gemini, or Anthropic Claude) to provide menu translations</li>
+                <li><strong>Service Improvement:</strong> We analyze usage patterns and location data to enhance translation accuracy and user experience</li>
+                <li><strong>Marketing and Analytics:</strong> Location and usage data help us understand our user base and improve our marketing efforts</li>
                 <li><strong>Payment Processing:</strong> When you purchase premium features, Stripe processes your payment information securely</li>
-                <li><strong>Customer Support:</strong> We use your information to respond to questions and provide assistance</li>
+                <li><strong>Customer Support:</strong> We use your account information to respond to questions and provide assistance</li>
                 <li><strong>Legal Compliance:</strong> We may process data to comply with legal obligations and prevent fraud</li>
             </ul>
 
             <div class="highlight">
-                <strong>AI Processing Notice:</strong> We use artificial intelligence to analyze your menu photos. This processing may include object recognition, text extraction, and language translation. While we strive for accuracy, AI translations may contain errors and should be verified independently.
+                <strong>AI Processing Notice:</strong> We use artificial intelligence from various providers (OpenAI, Google Gemini, Anthropic Claude) to analyze your menu photos. This processing may include object recognition, text extraction, and language translation. While we strive for accuracy, AI translations may contain errors and should be verified independently. We reserve the right to change our AI processing partners at any time without notice.
             </div>
 
             <h2>Information sharing and third parties</h2>
             <p>We share your information only as necessary to provide our service:</p>
             
-            <h3>OpenAI (AI Processing)</h3>
-            <p>We use OpenAI's services to process your images for translation. Key protections include:</p>
+            <h3>AI Processing Partners</h3>
+            <p>We use multiple AI services to process your images for translation, including but not limited to OpenAI, Google Gemini, and Anthropic Claude. Key protections include:</p>
             <ul>
-                <li>Your images are not used to train OpenAI's models</li>
-                <li>30-day retention policy for abuse monitoring only</li>
-                <li>AES-256 encryption during transmission and storage</li>
-                <li>Data Processing Agreement ensures GDPR compliance</li>
-                <li>Zero Data Retention available for eligible API endpoints</li>
+                <li>Your images are transmitted securely using encryption</li>
+                <li>Images are processed in real-time and not stored by us</li>
+                <li>Each AI partner has their own data processing and retention policies</li>
+                <li>We may change AI processing partners at any time to improve service quality</li>
+                <li>Data Processing Agreements ensure compliance with privacy regulations where applicable</li>
             </ul>
             
             <h3>Stripe (Payment Processing)</h3>
-            <p>For premium features, we use Stripe to process payments securely. Stripe is PCI DSS Level 1 certified and maintains strict security standards. We do not store your complete payment information on our servers.</p>
+            <p>For premium features, we use Stripe to process payments securely. Stripe is PCI DSS Level 1 certified and maintains strict security standards. We do not store your complete payment information on our servers. We reserve the right to change payment gateways at any time without notice.</p>
             
-            <h3>Netlify (Hosting)</h3>
-            <p>Our application is hosted on Netlify's global infrastructure, which provides data encryption, security monitoring, and SOC 2 compliance certification.</p>
+            <h3>Hosting Infrastructure</h3>
+            <p>Our application is hosted on cloud infrastructure that may include services like Netlify, AWS, Google Cloud, or other providers. These services provide data encryption, security monitoring, and compliance certifications. We reserve the right to change our hosting providers at any time without notice to improve service reliability and performance.</p>
 
             <h2>Data retention and security</h2>
             <h3>How long we keep your data</h3>
             <ul>
-                <li><strong>Images:</strong> Automatically deleted within 30 days of upload</li>
+                <li><strong>Images:</strong> Not stored by us - transmitted directly to AI partners for processing</li>
                 <li><strong>Account Data:</strong> Retained until you delete your account</li>
-                <li><strong>Usage Logs:</strong> Retained for 12 months for security and improvement purposes</li>
+                <li><strong>Usage and Location Logs:</strong> Retained for 24 months for marketing analysis and service improvement</li>
                 <li><strong>Payment Records:</strong> Retained for 7 years for tax and legal compliance</li>
             </ul>
             
             <h3>Security measures</h3>
             <p>We protect your data using industry-standard security measures:</p>
             <ul>
-                <li>AES-256 encryption for data at rest and in transit</li>
-                <li>Secure HTTPS connections for all data transmission</li>
-                <li>Regular security audits and monitoring</li>
+                <li>HTTPS encryption for all data transmission to AI partners</li>
+                <li>Secure API connections with our AI processing partners</li>
+                <li>Regular security monitoring and audits</li>
                 <li>Limited access to personal data on a need-to-know basis</li>
-                <li>Automated deletion systems for temporary image storage</li>
+                <li>Secure payment processing through certified providers</li>
             </ul>
+
+            <h2>Service provider changes</h2>
+            <div class="important">
+                <strong>Important Notice:</strong> We reserve the right to change our hosting providers, AI processing agents (OpenAI, Google Gemini, Anthropic Claude, or others), payment gateways, or any other service providers at any time without prior notice. These changes may be made to improve service quality, reliability, cost-effectiveness, or to add new features. When such changes occur, your data will continue to be protected according to this privacy policy and applicable laws.
+            </div>
 
             <h2>Your privacy rights</h2>
             <p>You have significant control over your personal data:</p>
@@ -271,7 +306,7 @@
             <p>You can request a copy of all personal data we have about you, including account information and usage history.</p>
             
             <h3>Correction and deletion</h3>
-            <p>You can update account information at any time or request deletion of your data. Image data is automatically deleted within 30 days.</p>
+            <p>You can update account information at any time or request deletion of your data. Since we don't store images, there are no images to delete from our servers.</p>
             
             <h3>Data portability</h3>
             <p>You can export your account data in machine-readable format to use with other services.</p>
@@ -296,38 +331,71 @@
             <p>We use essential cookies to provide our service and optional cookies to improve your experience:</p>
             <ul>
                 <li><strong>Essential Cookies:</strong> Required for basic functionality (login, preferences)</li>
-                <li><strong>Analytics Cookies:</strong> Help us understand usage patterns (with your consent)</li>
-                <li><strong>Payment Cookies:</strong> Set by Stripe for secure payment processing</li>
+                <li><strong>Analytics Cookies:</strong> Help us understand usage patterns and location data (with your consent)</li>
+                <li><strong>Payment Cookies:</strong> Set by our payment providers for secure payment processing</li>
             </ul>
             <p>You can control cookie preferences in your browser settings or through our cookie consent manager.</p>
+
+            <h2>Marketing and analytics</h2>
+            <p>We use the anonymous location data and usage information we collect for:</p>
+            <ul>
+                <li>Understanding which geographic regions use our service most frequently</li>
+                <li>Optimizing our AI translation models for different markets and languages</li>
+                <li>Improving our marketing campaigns and targeting</li>
+                <li>Making data-driven decisions about feature development and service improvements</li>
+                <li>Analyzing trends in menu translation requests by region</li>
+            </ul>
 
             <h2>Children's privacy</h2>
             <p>Our service is not intended for children under 13. We do not knowingly collect personal information from children. If you believe we have collected information from a child, please contact us immediately.</p>
 
             <h2>Changes to this policy</h2>
-            <p>We may update this privacy policy to reflect changes in our practices or legal requirements. We will notify you of significant changes by email (if you have an account) and by posting the updated policy on our website. Your continued use after changes indicates acceptance of the updated policy.</p>
+            <p>We may update this privacy policy to reflect changes in our practices, legal requirements, or service providers. We will notify you of significant changes by email (if you have an account) and by posting the updated policy on our website. Your continued use after changes indicates acceptance of the updated policy.</p>
 
             <div class="contact-info">
                 <h2>Contact us about privacy</h2>
                 <p>If you have questions about this privacy policy or how we handle your data:</p>
-                <ul>
-                    <li><strong>Email:</strong> privacy@whatthemenu.com</li>
-                    <li><strong>Data Protection Officer:</strong> dpo@whatthemenu.com</li>
-                    <li><strong>EU Representative:</strong> eu-privacy@whatthemenu.com</li>
-                </ul>
+                <p><strong>Email:</strong> hello@whatthemenu.com</p>
                 <p>We will respond to privacy inquiries within 30 days (or 1 month for GDPR requests).</p>
             </div>
         </main>
     </div>
 
-    <footer>
-        <div class="footer-links">
-            <a href="/">Home</a>
-            <a href="/privacy.html">Privacy Policy</a>
-            <a href="/terms.html">Terms of Service</a>
-            <a href="/contact.html">Contact Us</a>
+<footer class="footer">
+    <div class="footer-container">
+        <div class="footer-content">
+            <div class="footer-logo-section">
+                <div class="footer-logo">
+                    <div class="footer-logo-icon">🤔</div>
+                    <div class="footer-logo-text">What The Menu?</div>
+                </div>
+                <p class="footer-description">
+                    AI-powered menu translation for confident dining worldwide.
+                </p>
+            </div>
+            <div class="footer-section">
+                <h3 class="footer-section-title">Legal</h3>
+                <a href="privacy.html" class="footer-link">Privacy Policy</a>
+                <a href="terms.html" class="footer-link">Terms of Service</a>
+                <a href="contact.html" class="footer-link">Contact</a>
+            </div>
+            <div class="footer-section">
+                <h3 class="footer-section-title">Languages</h3>
+                <div class="language-list">
+                    <span class="footer-link">English, Spanish, French, Italian, German, Japanese, Korean, Chinese</span>
+                </div>
+                <p class="footer-link">+ 42 more languages</p>
+            </div>
         </div>
-        <p>&copy; 2025 What The Menu? All rights reserved.</p>
-    </footer>
+        <div class="footer-bottom">
+            <div class="footer-copyright">
+                © 2025 What The Menu? All rights reserved.
+            </div>
+            <div class="footer-security">
+                🔒 Secure payments by Stripe
+            </div>
+        </div>
+    </div>
+</footer>
 </body>
 </html>

@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Terms of Service - What The Menu?</title>
     <meta name="description" content="Terms of service for What The Menu? - AI-powered menu translation app. Understand your rights and responsibilities.">
+
+    <link rel="stylesheet" href="styles/shared-header.css">
+    <link rel="stylesheet" href="styles/shared-footer.css">
+
     <style>
         * {
             margin: 0;
@@ -62,13 +66,13 @@
             opacity: 0.8;
         }
         
-        main {
-            background: white;
-            margin: 2rem 0;
-            padding: 2rem;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-        }
+main {
+    background: white;
+    margin: 100px 0 2rem 0; /* Changed this line */
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+}
         
         h1 {
             color: #2c3e50;
@@ -169,35 +173,53 @@
             color: white;
         }
         
-        @media (max-width: 768px) {
-            .nav-links {
-                flex-direction: column;
-                gap: 1rem;
-            }
-            
-            .footer-links {
-                flex-direction: column;
-                gap: 1rem;
-            }
-            
-            h1 {
-                font-size: 2rem;
-            }
-        }
+@media (max-width: 768px) {
+    .nav-links {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .footer-links {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    h1 {
+        font-size: 2rem;
+    }
+    
+    .contact-form {
+        padding: 1rem;
+    }
+    
+    main {
+        margin: 80px 0 2rem 0;
+    }
+}
+
     </style>
 </head>
 <body>
-    <header>
-        <nav>
-            <div class="logo">What The Menu?</div>
-            <ul class="nav-links">
-                <li><a href="/">Home</a></li>
-                <li><a href="/privacy.html">Privacy</a></li>
-                <li><a href="/terms.html">Terms</a></li>
-                <li><a href="/contact.html">Contact</a></li>
-            </ul>
-        </nav>
-    </header>
+<header class="header">
+    <div class="container">
+        <div class="header-content">
+            <div class="logo">
+                <div class="logo-icon">🤔</div>
+                <div class="logo-text">What The Menu?</div>
+            </div>
+            <nav class="nav">
+                <a href="#how-it-works" class="nav-link">How It Works</a>
+                <a href="#pricing" class="nav-link">Pricing</a>
+            </nav>
+            <div class="header-actions">
+                <div class="scan-counter">
+                    <span class="scans-used">0</span>/<span class="scans-limit">3</span> free scans
+                </div>
+                <div class="user-icon">👤</div>
+            </div>
+        </div>
+    </div>
+</header>
 
     <div class="container">
         <main>
@@ -380,14 +402,41 @@
         </main>
     </div>
 
-    <footer>
-        <div class="footer-links">
-            <a href="/">Home</a>
-            <a href="/privacy.html">Privacy Policy</a>
-            <a href="/terms.html">Terms of Service</a>
-            <a href="/contact.html">Contact Us</a>
+<footer class="footer">
+    <div class="footer-container">
+        <div class="footer-content">
+            <div class="footer-logo-section">
+                <div class="footer-logo">
+                    <div class="footer-logo-icon">🤔</div>
+                    <div class="footer-logo-text">What The Menu?</div>
+                </div>
+                <p class="footer-description">
+                    AI-powered menu translation for confident dining worldwide.
+                </p>
+            </div>
+            <div class="footer-section">
+                <h3 class="footer-section-title">Legal</h3>
+                <a href="privacy.html" class="footer-link">Privacy Policy</a>
+                <a href="terms.html" class="footer-link">Terms of Service</a>
+                <a href="contact.html" class="footer-link">Contact</a>
+            </div>
+            <div class="footer-section">
+                <h3 class="footer-section-title">Languages</h3>
+                <div class="language-list">
+                    <span class="footer-link">English, Spanish, French, Italian, German, Japanese, Korean, Chinese</span>
+                </div>
+                <p class="footer-link">+ 42 more languages</p>
+            </div>
         </div>
-        <p>&copy; 2025 What The Menu? All rights reserved.</p>
-    </footer>
+        <div class="footer-bottom">
+            <div class="footer-copyright">
+                © 2025 What The Menu? All rights reserved.
+            </div>
+            <div class="footer-security">
+                🔒 Secure payments by Stripe
+            </div>
+        </div>
+    </div>
+</footer>
 </body>
 </html>

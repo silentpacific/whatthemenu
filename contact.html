@@ -4,7 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Contact Us - What The Menu?</title>
-    <meta name="description" content="Contact What The Menu? support team. Get help with AI menu translation, billing, privacy questions, and technical support.">
+    <meta name="description" content="Contact What The Menu? - We're here to help with any questions or feedback about our AI menu translation app.">
+
+    <link rel="stylesheet" href="styles/shared-header.css">
+    <link rel="stylesheet" href="styles/shared-footer.css">
+
     <style>
         * {
             margin: 0;
@@ -62,13 +66,13 @@
             opacity: 0.8;
         }
         
-        main {
-            background: white;
-            margin: 2rem 0;
-            padding: 2rem;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-        }
+main {
+    background: white;
+    margin: 100px 0 2rem 0; /* Changed this line */
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+}
         
         h1 {
             color: #2c3e50;
@@ -84,67 +88,8 @@
             padding-bottom: 0.5rem;
         }
         
-        h3 {
-            color: #5a6c7d;
-            margin: 1.5rem 0 0.5rem 0;
-            font-size: 1.2rem;
-        }
-        
         p {
             margin-bottom: 1rem;
-            text-align: justify;
-        }
-        
-        .contact-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
-            margin: 2rem 0;
-        }
-        
-        .contact-card {
-            background: #f8f9fa;
-            border-radius: 12px;
-            padding: 1.5rem;
-            border-left: 4px solid #667eea;
-            transition: transform 0.3s, box-shadow 0.3s;
-        }
-        
-        .contact-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
-        }
-        
-        .contact-card h3 {
-            color: #667eea;
-            margin-top: 0;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        
-        .icon {
-            width: 24px;
-            height: 24px;
-            display: inline-block;
-        }
-        
-        .urgent {
-            background: #fff3cd;
-            border: 1px solid #ffeaa7;
-            border-radius: 6px;
-            padding: 1rem;
-            margin: 1rem 0;
-            border-left: 4px solid #fdcb6e;
-        }
-        
-        .emergency {
-            background: #f8d7da;
-            border: 1px solid #f5c6cb;
-            border-radius: 6px;
-            padding: 1rem;
-            margin: 1rem 0;
-            border-left: 4px solid #dc3545;
         }
         
         .info {
@@ -156,62 +101,110 @@
             border-left: 4px solid #17a2b8;
         }
         
-        .response-times {
+        .emergency {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            border-radius: 6px;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-left: 4px solid #dc3545;
+        }
+        
+        .contact-form {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 2rem 0;
+            border: 1px solid #e9ecef;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        input[type="text"],
+        input[type="email"],
+        textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-family: inherit;
+            transition: border-color 0.3s ease;
+        }
+        
+        input[type="text"]:focus,
+        input[type="email"]:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        textarea {
+            height: 120px;
+            resize: vertical;
+        }
+        
+        .submit-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 0.75rem 2rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: block;
+            width: 100%;
+        }
+        
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        .submit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .contact-info {
             background: #e8f5e8;
             border-radius: 8px;
             padding: 1.5rem;
             margin: 2rem 0;
+            text-align: center;
         }
         
-        .faq-section {
-            margin: 2rem 0;
-        }
-        
-        .faq-item {
-            background: #f8f9fa;
-            border-radius: 8px;
+        .success-message {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            border-radius: 6px;
+            padding: 1rem;
             margin: 1rem 0;
-            overflow: hidden;
-        }
-        
-        .faq-question {
-            background: #e9ecef;
-            padding: 1rem;
-            cursor: pointer;
-            font-weight: bold;
-            user-select: none;
-        }
-        
-        .faq-question:hover {
-            background: #dee2e6;
-        }
-        
-        .faq-answer {
-            padding: 1rem;
+            border-left: 4px solid #28a745;
             display: none;
         }
         
-        .faq-answer.active {
-            display: block;
-        }
-        
-        .social-links {
-            display: flex;
-            gap: 1rem;
-            margin-top: 1rem;
-        }
-        
-        .social-links a {
-            padding: 0.5rem 1rem;
-            background: #667eea;
-            color: white;
-            text-decoration: none;
+        .error-message {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
             border-radius: 6px;
-            transition: background 0.3s;
-        }
-        
-        .social-links a:hover {
-            background: #5a67d8;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-left: 4px solid #dc3545;
+            display: none;
         }
         
         footer {
@@ -239,260 +232,194 @@
             color: white;
         }
         
-        @media (max-width: 768px) {
-            .nav-links {
-                flex-direction: column;
-                gap: 1rem;
-            }
-            
-            .footer-links {
-                flex-direction: column;
-                gap: 1rem;
-            }
-            
-            .contact-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .social-links {
-                flex-direction: column;
-            }
-            
-            h1 {
-                font-size: 2rem;
-            }
-        }
+@media (max-width: 768px) {
+    .nav-links {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .footer-links {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    h1 {
+        font-size: 2rem;
+    }
+    
+    .contact-form {
+        padding: 1rem;
+    }
+    
+    main {
+        margin: 80px 0 2rem 0;
+    }
+}
+
     </style>
 </head>
 <body>
-    <header>
-        <nav>
-            <div class="logo">What The Menu?</div>
-            <ul class="nav-links">
-                <li><a href="/">Home</a></li>
-                <li><a href="/privacy.html">Privacy</a></li>
-                <li><a href="/terms.html">Terms</a></li>
-                <li><a href="/contact.html">Contact</a></li>
-            </ul>
-        </nav>
-    </header>
+<header class="header">
+    <div class="container">
+        <div class="header-content">
+            <div class="logo">
+                <div class="logo-icon">🤔</div>
+                <div class="logo-text">What The Menu?</div>
+            </div>
+            <nav class="nav">
+                <a href="#how-it-works" class="nav-link">How It Works</a>
+                <a href="#pricing" class="nav-link">Pricing</a>
+            </nav>
+            <div class="header-actions">
+                <div class="scan-counter">
+                    <span class="scans-used">0</span>/<span class="scans-limit">3</span> free scans
+                </div>
+                <div class="user-icon">👤</div>
+            </div>
+        </div>
+    </div>
+</header>
 
     <div class="container">
         <main>
             <h1>Contact Us</h1>
             
             <div class="info">
-                <strong>We're here to help!</strong> Whether you have questions about AI translations, need billing support, or want to report an issue, our team is ready to assist you. Choose the contact method that works best for your needs.
+                <strong>We're here to help!</strong> Have a question, need support, or want to share feedback? We'd love to hear from you. Simply fill out the form below and we'll get back to you as soon as possible. We're always open to suggestions and ways to improve your experience.
             </div>
 
             <div class="emergency">
                 <strong>🚨 MEDICAL EMERGENCY:</strong> If you're experiencing an allergic reaction or food poisoning, call emergency services immediately (911 in the US, or your local emergency number). Do not wait for our response for medical emergencies.
             </div>
 
-            <div class="contact-grid">
-                <div class="contact-card">
-                    <h3>
-                        <span class="icon">📧</span>
-                        General Support
-                    </h3>
-                    <p><strong>Email:</strong> support@whatthemenu.com</p>
-                    <p>For general questions, technical issues, feedback, and feature requests.</p>
-                    <p><strong>Response time:</strong> Within 24 hours</p>
-                </div>
-
-                <div class="contact-card">
-                    <h3>
-                        <span class="icon">💳</span>
-                        Billing & Payments
-                    </h3>
-                    <p><strong>Email:</strong> billing@whatthemenu.com</p>
-                    <p>For refund requests, payment issues, subscription questions, and billing disputes.</p>
-                    <p><strong>Response time:</strong> Within 12 hours</p>
-                </div>
-
-                <div class="contact-card">
-                    <h3>
-                        <span class="icon">🔒</span>
-                        Privacy & Data
-                    </h3>
-                    <p><strong>Email:</strong> privacy@whatthemenu.com</p>
-                    <p>For data deletion requests, privacy concerns, GDPR/CCPA inquiries, and data protection questions.</p>
-                    <p><strong>Response time:</strong> Within 30 days (1 month for GDPR)</p>
-                </div>
-
-                <div class="contact-card">
-                    <h3>
-                        <span class="icon">⚖️</span>
-                        Legal & Compliance
-                    </h3>
-                    <p><strong>Email:</strong> legal@whatthemenu.com</p>
-                    <p>For legal notices, copyright issues, terms of service questions, and compliance matters.</p>
-                    <p><strong>Response time:</strong> Within 5 business days</p>
-                </div>
-
-                <div class="contact-card">
-                    <h3>
-                        <span class="icon">🤝</span>
-                        Partnerships
-                    </h3>
-                    <p><strong>Email:</strong> partnerships@whatthemenu.com</p>
-                    <p>For business partnerships, API access, restaurant integrations, and collaboration opportunities.</p>
-                    <p><strong>Response time:</strong> Within 3 business days</p>
-                </div>
-
-                <div class="contact-card">
-                    <h3>
-                        <span class="icon">🏢</span>
-                        Press & Media
-                    </h3>
-                    <p><strong>Email:</strong> press@whatthemenu.com</p>
-                    <p>For media inquiries, press releases, interview requests, and company information.</p>
-                    <p><strong>Response time:</strong> Within 2 business days</p>
-                </div>
-            </div>
-
-            <div class="urgent">
-                <h3>Priority Support</h3>
-                <p>For urgent issues affecting service availability, security concerns, or time-sensitive billing problems, mark your email subject with "<strong>[URGENT]</strong>" for faster response.</p>
-            </div>
-
-            <div class="response-times">
-                <h2>What to expect when you contact us</h2>
-                <ul>
-                    <li><strong>Acknowledgment:</strong> You'll receive an automated confirmation within minutes</li>
-                    <li><strong>Personal Response:</strong> A team member will reply within our stated timeframes</li>
-                    <li><strong>Follow-up:</strong> We'll keep you updated on complex issues that require additional time</li>
-                    <li><strong>Resolution:</strong> We aim to resolve most issues within 2-3 business days</li>
-                </ul>
-            </div>
-
-            <h2>International users</h2>
-            <p>We provide support in English for users worldwide. For users in the European Union, you can also contact our EU representative:</p>
-            <ul>
-                <li><strong>EU Privacy Representative:</strong> eu-privacy@whatthemenu.com</li>
-                <li><strong>EU General Inquiries:</strong> eu-support@whatthemenu.com</li>
-            </ul>
-
-            <div class="faq-section">
-                <h2>Frequently asked questions</h2>
+            <div class="contact-form">
+                <h2>Send us a message</h2>
                 
-                <div class="faq-item">
-                    <div class="faq-question" onclick="toggleFAQ(this)">
-                        How accurate are the AI translations?
-                    </div>
-                    <div class="faq-answer">
-                        <p>Our AI strives for high accuracy, but translations may contain errors, especially with complex dishes, regional specialties, or allergen information. We strongly recommend verifying important information, especially allergens and dietary restrictions, directly with restaurant staff.</p>
-                    </div>
+                <div class="success-message" id="successMessage">
+                    <strong>Thank you!</strong> Your message has been sent successfully. We'll get back to you soon.
                 </div>
-
-                <div class="faq-item">
-                    <div class="faq-question" onclick="toggleFAQ(this)">
-                        How do I request a refund?
-                    </div>
-                    <div class="faq-answer">
-                        <p>Email billing@whatthemenu.com within 24 hours of purchase with your transaction details. Refunds are processed within 5 business days to your original payment method. Processing fees are non-refundable.</p>
-                    </div>
+                
+                <div class="error-message" id="errorMessage">
+                    <strong>Oops!</strong> There was an error sending your message. Please try again or email us directly at hello@whatthemenu.com.
                 </div>
-
-                <div class="faq-item">
-                    <div class="faq-question" onclick="toggleFAQ(this)">
-                        Do I need to create an account?
+                
+                <form id="contactForm" netlify>
+                    <div class="form-group">
+                        <label for="name">Name *</label>
+                        <input type="text" id="name" name="name" required>
                     </div>
-                    <div class="faq-answer">
-                        <p>No, account creation is optional. You can use our core translation features without an account. Creating an account provides additional features like translation history and personalized settings.</p>
+                    
+                    <div class="form-group">
+                        <label for="email">Email *</label>
+                        <input type="email" id="email" name="email" required>
                     </div>
-                </div>
-
-                <div class="faq-item">
-                    <div class="faq-question" onclick="toggleFAQ(this)">
-                        How is my image data protected?
+                    
+                    <div class="form-group">
+                        <label for="message">Message *</label>
+                        <textarea id="message" name="message" placeholder="Tell us how we can help you..." required></textarea>
                     </div>
-                    <div class="faq-answer">
-                        <p>Your images are encrypted during transmission and processing. We automatically delete images within 30 days. Images are processed using OpenAI's secure services and are not used to train AI models. See our Privacy Policy for complete details.</p>
-                    </div>
-                </div>
-
-                <div class="faq-item">
-                    <div class="faq-question" onclick="toggleFAQ(this)">
-                        What if the app isn't working properly?
-                    </div>
-                    <div class="faq-answer">
-                        <p>First, try refreshing the page or restarting the app. If issues persist, contact support@whatthemenu.com with details about the problem, including your device type, browser, and any error messages you're seeing.</p>
-                    </div>
-                </div>
-
-                <div class="faq-item">
-                    <div class="faq-question" onclick="toggleFAQ(this)">
-                        Can I use this app for commercial purposes?
-                    </div>
-                    <div class="faq-answer">
-                        <p>Our standard service is for personal use only. For commercial licensing, API access, or business integrations, please contact partnerships@whatthemenu.com to discuss custom solutions.</p>
-                    </div>
-                </div>
+                    
+                    <button type="submit" class="submit-btn" id="submitBtn">
+                        Send Message
+                    </button>
+                </form>
             </div>
 
-            <h2>Alternative contact methods</h2>
-            <div class="contact-card">
-                <h3>Social Media</h3>
-                <p>Follow us for updates, tips, and community discussions:</p>
-                <div class="social-links">
-                    <a href="#" target="_blank">Twitter</a>
-                    <a href="#" target="_blank">Instagram</a>
-                    <a href="#" target="_blank">Facebook</a>
-                    <a href="#" target="_blank">LinkedIn</a>
-                </div>
-                <p><small>Note: Social media is not for urgent support requests. Please use email for timely assistance.</small></p>
-            </div>
-
-            <h2>Mailing address</h2>
-            <div class="contact-card">
-                <h3>Physical Address</h3>
-                <p>What The Menu? Inc.<br>
-                [Your Company Address]<br>
-                [City, State ZIP Code]<br>
-                [Country]</p>
-                <p><em>Please note: We primarily handle inquiries via email for faster response times.</em></p>
-            </div>
-
-            <div class="info">
-                <h3>Help us help you better</h3>
-                <p>When contacting support, please include:</p>
-                <ul>
-                    <li>Clear description of your issue or question</li>
-                    <li>Your device type and browser (if applicable)</li>
-                    <li>Screenshots of any error messages</li>
-                    <li>Steps you've already tried to resolve the issue</li>
-                    <li>Your account email (if you have an account)</li>
-                </ul>
+            <div class="contact-info">
+                <h2>Other ways to reach us</h2>
+                <p><strong>Email:</strong> hello@whatthemenu.com</p>
+                <p>We typically respond within 24 hours</p>
             </div>
         </main>
     </div>
 
-    <footer>
-        <div class="footer-links">
-            <a href="/">Home</a>
-            <a href="/privacy.html">Privacy Policy</a>
-            <a href="/terms.html">Terms of Service</a>
-            <a href="/contact.html">Contact Us</a>
+<footer class="footer">
+    <div class="footer-container">
+        <div class="footer-content">
+            <div class="footer-logo-section">
+                <div class="footer-logo">
+                    <div class="footer-logo-icon">🤔</div>
+                    <div class="footer-logo-text">What The Menu?</div>
+                </div>
+                <p class="footer-description">
+                    AI-powered menu translation for confident dining worldwide.
+                </p>
+            </div>
+            <div class="footer-section">
+                <h3 class="footer-section-title">Legal</h3>
+                <a href="privacy.html" class="footer-link">Privacy Policy</a>
+                <a href="terms.html" class="footer-link">Terms of Service</a>
+                <a href="contact.html" class="footer-link">Contact</a>
+            </div>
+            <div class="footer-section">
+                <h3 class="footer-section-title">Languages</h3>
+                <div class="language-list">
+                    <span class="footer-link">English, Spanish, French, Italian, German, Japanese, Korean, Chinese</span>
+                </div>
+                <p class="footer-link">+ 42 more languages</p>
+            </div>
         </div>
-        <p>&copy; 2025 What The Menu? All rights reserved.</p>
-    </footer>
+        <div class="footer-bottom">
+            <div class="footer-copyright">
+                © 2025 What The Menu? All rights reserved.
+            </div>
+            <div class="footer-security">
+                🔒 Secure payments by Stripe
+            </div>
+        </div>
+    </div>
+</footer>
 
     <script>
-        function toggleFAQ(element) {
-            const answer = element.nextElementSibling;
-            const isActive = answer.classList.contains('active');
+        // Handle form submission
+        document.getElementById('contactForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
             
-            // Close all other FAQ answers
-            document.querySelectorAll('.faq-answer').forEach(item => {
-                item.classList.remove('active');
-            });
+            const submitBtn = document.getElementById('submitBtn');
+            const successMessage = document.getElementById('successMessage');
+            const errorMessage = document.getElementById('errorMessage');
             
-            // Toggle current FAQ
-            if (!isActive) {
-                answer.classList.add('active');
+            // Hide previous messages
+            successMessage.style.display = 'none';
+            errorMessage.style.display = 'none';
+            
+            // Show loading state
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Sending...';
+            
+            // Get form data
+            const formData = new FormData(this);
+            
+            try {
+                // Submit to Netlify Forms
+                const response = await fetch('/', {
+                    method: 'POST',
+                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                    body: new URLSearchParams(formData).toString()
+                });
+                
+                if (response.ok) {
+                    // Success
+                    successMessage.style.display = 'block';
+                    this.reset();
+                    
+                    // Scroll to success message
+                    successMessage.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                } else {
+                    throw new Error('Network response was not ok');
+                }
+                
+            } catch (error) {
+                // Error
+                console.error('Error:', error);
+                errorMessage.style.display = 'block';
+                errorMessage.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            } finally {
+                // Reset button
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Send Message';
             }
-        }
+        });
     </script>
 </body>
 </html>
