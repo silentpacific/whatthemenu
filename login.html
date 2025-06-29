@@ -1,4 +1,7 @@
-<!DOCTYPE html>
+        .divider span {
+            background: white;
+            padding: 0 15px;
+        }<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -7,9 +10,14 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="global.css">
     <style>
+        body {
+            background: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
         .auth-container {
             max-width: 400px;
-            margin: 150px auto 0;
+            margin: 0 auto;
             padding: 30px;
             background: white;
             border-radius: 15px;
@@ -167,6 +175,56 @@
             margin-bottom: 20px;
         }
         
+        .social-login {
+            margin-bottom: 20px;
+        }
+        
+        .google-btn {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #dadce0;
+            background: white;
+            color: #3c4043;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .google-btn:hover {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .divider {
+            text-align: center;
+            margin: 20px 0;
+            position: relative;
+            color: #7f8c8d;
+        }
+        
+        .divider::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: #ecf0f1;
+        }
+        
+        .google-icon {
+            background: linear-gradient(135deg, #4285f4, #ea4335, #fbbc05, #34a853);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: bold;
+            font-size: 18px;
+        }
+        
         .user-email {
             font-weight: 600;
             color: #155724;
@@ -189,17 +247,12 @@
 </head>
 <body>
     <!-- Header -->
-    <header class="header">
-        <div class="header-container">
-            <div class="header-logo">
-                <div class="header-logo-icon">🤔</div>
-                <div class="header-logo-text">What The Menu?</div>
+    <header style="background: white; box-shadow: 0 2px 10px rgba(0,0,0,0.1); position: fixed; top: 0; left: 0; right: 0; z-index: 1000;">
+        <div style="max-width: 1200px; margin: 0 auto; display: flex; justify-content: center; align-items: center; padding: 1rem 2rem;">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <div style="font-size: 2rem;">🤔</div>
+                <div style="font-size: 1.5rem; font-weight: bold; color: #2c3e50;">What The Menu?</div>
             </div>
-            <nav class="header-nav">
-                <a href="index.html" class="nav-link">Home</a>
-                <a href="dashboard.html" class="nav-link">Dashboard</a>
-                <a href="login.html" class="nav-link nav-link-active">Login</a>
-            </nav>
         </div>
     </header>
 
@@ -208,7 +261,7 @@
             <div class="auth-header">
                 <div class="auth-logo">🤔</div>
                 <h1 class="auth-title">What The Menu?</h1>
-                <p class="auth-subtitle">Access your restaurant menus</p>
+                <p class="auth-subtitle">Never wonder what's on the menu again.</p>
             </div>
 
             <!-- User Info (shown when logged in) -->
@@ -228,20 +281,19 @@
                     <div class="auth-tab" onclick="switchTab('signup')">Sign Up</div>
                 </div>
 
+                <!-- Social Login -->
+                <div class="social-login">
+                    <button onclick="signInWithGoogle()" class="google-btn" id="google-btn">
+                        <span class="google-icon">G</span>
+                        <span id="google-text">Login with Google</span>
+                    </button>
+                    <div class="divider">
+                        <span>or</span>
+                    </div>
+                </div>
+
                 <!-- Alerts -->
                 <div id="alert-container"></div>
-
-    <!-- 👆 ADD THE SOCIAL LOGIN HERE 👆 -->
-    <div class="social-login">
-        <button onclick="signInWithGoogle()" class="google-btn">
-            <span class="google-icon">🔍</span>
-            Continue with Google
-        </button>
-        <div class="divider">
-            <span>or</span>
-        </div>
-    </div>
-    <!-- 👆 END SOCIAL LOGIN 👆 -->
 
                 <!-- Login Form -->
                 <form id="login-form" class="auth-form active">
@@ -283,10 +335,45 @@
         </div>
     </main>
 
+    <!-- Footer -->
+    <footer style="background: #2c3e50; color: white; margin-top: 3rem;">
+        <div style="max-width: 1200px; margin: 0 auto; padding: 2rem 1rem;">
+            <div style="display: grid; grid-template-columns: 1fr 200px 250px; gap: 2rem; margin-bottom: 2rem;">
+                <div>
+                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem;">
+                        <div style="font-size: 2rem;">🤔</div>
+                        <div style="font-size: 1.5rem; font-weight: bold;">What The Menu?</div>
+                    </div>
+                    <p style="color: #bdc3c7; margin: 0;">Never wonder what's on the menu again.</p>
+                </div>
+                <div>
+                    <h3 style="color: white; margin-bottom: 1rem; font-size: 1.1rem;">Legal</h3>
+                    <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                        <a href="privacy.html" style="color: #bdc3c7; text-decoration: none; transition: color 0.3s;">Privacy Policy</a>
+                        <a href="terms.html" style="color: #bdc3c7; text-decoration: none; transition: color 0.3s;">Terms of Service</a>
+                        <a href="contact.html" style="color: #bdc3c7; text-decoration: none; transition: color 0.3s;">Contact</a>
+                    </div>
+                </div>
+                <div>
+                    <h3 style="color: white; margin-bottom: 1rem; font-size: 1.1rem;">Languages</h3>
+                    <p style="color: #bdc3c7; margin: 0; line-height: 1.5;">English, Spanish, French, Italian, German, Japanese, Korean, Chinese</p>
+                    <p style="color: #bdc3c7; margin: 0.5rem 0 0 0; font-size: 0.9rem;">+ 42 more languages</p>
+                </div>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 1.5rem; border-top: 1px solid #34495e;">
+                <div style="color: #bdc3c7;">© 2025 What The Menu? All rights reserved.</div>
+                <div style="color: #bdc3c7; display: flex; align-items: center; gap: 0.5rem;">
+                    <span>🔒</span>
+                    <span>Secure payments by Stripe</span>
+                </div>
+            </div>
+        </div>
+    </footer>
+
     <script>
         // Replace with your actual Supabase credentials
-        const SUPABASE_URL = 'https://tibeuchezcksymjivgwr.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRpYmV1Y2hlemNrc3ltaml2Z3dyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTEwMTQyNDAsImV4cCI6MjA2NjU5MDI0MH0.hx8ocUMZQaAvo50L_KtI9FuH4lklAT5N1th-H4njVrw';
+        const SUPABASE_URL = 'YOUR_SUPABASE_URL_HERE';
+        const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY_HERE';
         
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         
@@ -367,7 +454,7 @@
                 
                 showAlert('Login successful! Redirecting...', 'success');
                 setTimeout(() => {
-                    window.location.href = 'dashboard.html';
+                    window.location.href = 'scan.html';
                 }, 1500);
                 
             } catch (error) {
@@ -458,6 +545,28 @@
             }
         }
         
+        // Handle Google sign-in
+        async function signInWithGoogle() {
+            try {
+                const { data, error } = await supabase.auth.signInWithOAuth({
+                    provider: 'google',
+                    options: {
+                        redirectTo: window.location.origin + '/scan.html'
+                    }
+                });
+                
+                if (error) {
+                    throw error;
+                }
+                
+                // The redirect will happen automatically
+                
+            } catch (error) {
+                console.error('Google sign-in error:', error);
+                showAlert('Google sign-in failed. Please try again.', 'error');
+            }
+        }
+        
         // Handle logout
         async function logout() {
             try {
@@ -513,6 +622,14 @@
             // Update forms
             document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
             document.getElementById(`${tab}-form`).classList.add('active');
+            
+            // Update Google button text based on tab
+            const googleText = document.getElementById('google-text');
+            if (tab === 'login') {
+                googleText.textContent = 'Login with Google';
+            } else {
+                googleText.textContent = 'Sign up with Google';
+            }
             
             // Clear alerts
             clearAlerts();

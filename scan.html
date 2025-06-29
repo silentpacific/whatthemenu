@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scan Menu - What The Menu?</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="global.css">
+    <style>
+        body {
+            background: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .scan-container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 30px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        
+        .scan-title {
+            font-size: 2rem;
+            color: #2c3e50;
+            margin-bottom: 1rem;
+        }
+        
+        .scan-subtitle {
+            color: #7f8c8d;
+            font-size: 1.1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .upload-area {
+            border: 3px dashed #3498db;
+            border-radius: 15px;
+            padding: 3rem 2rem;
+            margin-bottom: 2rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            background: #f8f9fa;
+        }
+        
+        .upload-area:hover {
+            border-color: #2980b9;
+            background: #ecf0f1;
+        }
+        
+        .upload-area.dragover {
+            border-color: #27ae60;
+            background: #d5f4e6;
+        }
+        
+        .upload-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            display: block;
+        }
+        
+        .upload-text {
+            font-size: 1.2rem;
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+        }
+        
+        .upload-subtext {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+        }
+        
+        .scan-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .scan-option {
+            padding: 1.5rem;
+            border: 2px solid #ecf0f1;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: white;
+        }
+        
+        .scan-option:hover {
+            border-color: #3498db;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .option-icon {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+        
+        .option-title {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+        }
+        
+        .option-description {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+        }
+        
+        .hidden-input {
+            display: none;
+        }
+        
+        .logout-btn {
+            background: #e74c3c;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-left: 15px;
+        }
+        
+        .logout-btn:hover {
+            background: #c0392b;
+        }
+        
+        .processing {
+            display: none;
+            padding: 2rem;
+            text-align: center;
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #ecf0f1;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .user-info {
+            position: absolute;
+            top: 1rem;
+            right: 2rem;
+            color: #7f8c8d;
+            font-size: 0.9rem;
+        }
+        
+        @media (max-width: 768px) {
+            .scan-options {
+                grid-template-columns: 1fr;
+            }
+            
+            .user-info {
+                position: static;
+                text-align: center;
+                margin-bottom: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header style="background: white; box-shadow: 0 2px 10px rgba(0,0,0,0.1); position: fixed; top: 0; left: 0; right: 0; z-index: 1000;">
+        <div style="max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; padding: 1rem 2rem;">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <div style="font-size: 2rem;">🤔</div>
+                <div style="font-size: 1.5rem; font-weight: bold; color: #2c3e50;">What The Menu?</div>
+            </div>
+            <nav style="display: flex; gap: 2rem; align-items: center;">
+                <span id="user-email-nav" style="color: #7f8c8d; font-size: 0.9rem;"></span>
+                <button onclick="logout()" class="logout-btn">Logout</button>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <div class="scan-container">
+            <h1 class="scan-title">Scan Your Menu</h1>
+            <p class="scan-subtitle">Upload a photo of any restaurant menu and get instant translation in your preferred language</p>
+            
+            <!-- Upload Area -->
+            <div class="upload-area" onclick="triggerFileInput()" id="upload-area">
+                <span class="upload-icon">📸</span>
+                <div class="upload-text">Drop your menu photo here</div>
+                <div class="upload-subtext">or click to browse files</div>
+            </div>
+            
+            <!-- Hidden File Input -->
+            <input type="file" id="file-input" class="hidden-input" accept="image/*" onchange="handleFileSelect(event)">
+            
+			<div class="demo-controls">
+			    <button id="scan-btn" class="scan-button" disabled>
+			        <span class="btn-text">Scan Menu</span>
+			        <span class="btn-icon">🔍</span>
+			    </button>
+			</div>
+            
+            <!-- Processing State -->
+            <div id="processing" class="processing">
+                <div class="spinner"></div>
+                <div>Processing your menu...</div>
+                <div style="color: #7f8c8d; font-size: 0.9rem; margin-top: 0.5rem;">This may take a few moments</div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer style="background: #2c3e50; color: white; margin-top: 3rem;">
+        <div style="max-width: 1200px; margin: 0 auto; padding: 2rem 1rem;">
+            <div style="display: grid; grid-template-columns: 1fr 200px 250px; gap: 2rem; margin-bottom: 2rem;">
+                <div>
+                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem;">
+                        <div style="font-size: 2rem;">🤔</div>
+                        <div style="font-size: 1.5rem; font-weight: bold;">What The Menu?</div>
+                    </div>
+                    <p style="color: #bdc3c7; margin: 0;">Never wonder what's on the menu again.</p>
+                </div>
+                <div>
+                    <h3 style="color: white; margin-bottom: 1rem; font-size: 1.1rem;">Legal</h3>
+                    <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                        <a href="privacy.html" style="color: #bdc3c7; text-decoration: none; transition: color 0.3s;">Privacy Policy</a>
+                        <a href="terms.html" style="color: #bdc3c7; text-decoration: none; transition: color 0.3s;">Terms of Service</a>
+                        <a href="contact.html" style="color: #bdc3c7; text-decoration: none; transition: color 0.3s;">Contact</a>
+                    </div>
+                </div>
+                <div>
+                    <h3 style="color: white; margin-bottom: 1rem; font-size: 1.1rem;">Languages</h3>
+                    <p style="color: #bdc3c7; margin: 0; line-height: 1.5;">English, Spanish, French, Italian, German, Japanese, Korean, Chinese</p>
+                    <p style="color: #bdc3c7; margin: 0.5rem 0 0 0; font-size: 0.9rem;">+ 42 more languages</p>
+                </div>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 1.5rem; border-top: 1px solid #34495e;">
+                <div style="color: #bdc3c7;">© 2025 What The Menu? All rights reserved.</div>
+                <div style="color: #bdc3c7; display: flex; align-items: center; gap: 0.5rem;">
+                    <span>🔒</span>
+                    <span>Secure payments by Stripe</span>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Replace with your actual Supabase credentials
+        const SUPABASE_URL = 'YOUR_SUPABASE_URL_HERE';
+        const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY_HERE';
+        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        let currentUser = null;
+        
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuthAndLoadPage();
+            setupDragAndDrop();
+        });
+        
+        // Check authentication and subscription status
+        async function checkAuthAndLoadPage() {
+            try {
+                const { data: { session }, error } = await supabase.auth.getSession();
+                
+                if (error) {
+                    console.error('Error checking session:', error);
+                    redirectToLogin();
+                    return;
+                }
+                
+                if (!session || !session.user) {
+                    redirectToLogin();
+                    return;
+                }
+                
+                currentUser = session.user;
+                
+                // TODO: Check if user has active subscription
+                // For now, we'll assume they do
+                const hasActiveSubscription = await checkSubscriptionStatus();
+                
+                if (!hasActiveSubscription) {
+                    // Redirect to payment page
+                    window.location.href = 'pricing.html';
+                    return;
+                }
+                
+                loadPage();
+                
+            } catch (error) {
+                console.error('Error:', error);
+                redirectToLogin();
+            }
+        }
+        
+        // Check subscription status (placeholder)
+        async function checkSubscriptionStatus() {
+            // TODO: Implement actual subscription check
+            // For now, return true to allow access
+            return true;
+        }
+        
+        // Load the page
+        function loadPage() {
+            // Update navigation
+            document.getElementById('user-email-nav').textContent = currentUser.email;
+        }
+        
+        // Setup drag and drop functionality
+        function setupDragAndDrop() {
+            const uploadArea = document.getElementById('upload-area');
+            
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadArea.classList.add('dragover');
+            });
+            
+            uploadArea.addEventListener('dragleave', () => {
+                uploadArea.classList.remove('dragover');
+            });
+            
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadArea.classList.remove('dragover');
+                
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    handleFile(files[0]);
+                }
+            });
+        }
+        
+        // Trigger file input
+        function triggerFileInput() {
+            document.getElementById('file-input').click();
+        }
+        
+        // Handle file selection
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file) {
+                handleFile(file);
+            }
+        }
+        
+        // Open camera (for mobile devices)
+        function openCamera() {
+            // For mobile devices, we can use the file input with camera capture
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.capture = 'environment'; // Use rear camera
+            input.onchange = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    handleFile(file);
+                }
+            };
+            input.click();
+        }
+        
+        // Handle the uploaded file
+        function handleFile(file) {
+            // Validate file type
+            if (!file.type.startsWith('image/')) {
+                alert('Please select an image file.');
+                return;
+            }
+            
+            // Validate file size (max 10MB)
+            if (file.size > 10 * 1024 * 1024) {
+                alert('File size must be less than 10MB.');
+                return;
+            }
+            
+            // Show processing state
+            showProcessing(true);
+            
+            // TODO: Implement actual image processing
+            processImage(file);
+        }
+        
+        // Process the image (placeholder)
+        async function processImage(file) {
+            try {
+                // Simulate processing time
+                await new Promise(resolve => setTimeout(resolve, 3000));
+                
+                // TODO: Implement actual OCR and translation
+                // For now, just show success
+                showProcessing(false);
+                alert('Menu processed successfully! (This is a demo - actual processing will be implemented next)');
+                
+            } catch (error) {
+                console.error('Processing error:', error);
+                showProcessing(false);
+                alert('Failed to process the menu. Please try again.');
+            }
+        }
+        
+        // Show/hide processing state
+        function showProcessing(show) {
+            const processing = document.getElementById('processing');
+            const uploadArea = document.getElementById('upload-area');
+            const scanOptions = document.querySelector('.scan-options');
+            
+            if (show) {
+                processing.style.display = 'block';
+                uploadArea.style.display = 'none';
+                scanOptions.style.display = 'none';
+            } else {
+                processing.style.display = 'none';
+                uploadArea.style.display = 'block';
+                scanOptions.style.display = 'grid';
+            }
+        }
+        
+        // Handle logout
+        async function logout() {
+            try {
+                const { error } = await supabase.auth.signOut();
+                
+                if (error) {
+                    throw error;
+                }
+                
+                redirectToLogin();
+                
+            } catch (error) {
+                console.error('Logout error:', error);
+                alert('Logout failed. Please try again.');
+            }
+        }
+        
+        // Redirect to login page
+        function redirectToLogin() {
+            window.location.href = 'login.html';
+        }
+        
+        // Listen for auth changes
+        supabase.auth.onAuthStateChange((event, session) => {
+            if (event === 'SIGNED_OUT' || !session) {
+                redirectToLogin();
+            }
+        });
+    </script>
+</body>
+</html>
