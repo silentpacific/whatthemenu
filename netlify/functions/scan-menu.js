@@ -6,18 +6,18 @@ exports.handler = async (event, context) => {
         'Content-Type': 'application/json'
     };
 
-    if (event.httpMethod === 'OPTIONS') {
-        return { statusCode: 200, headers };
-    }
-
-    if (event.httpMethod !== 'POST') {
-        return { statusCode: 405, headers, body: JSON.stringify({ error: 'Method not allowed' }) };
-    }
+    if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers };
+    if (event.httpMethod !== 'POST') return { statusCode: 405, headers, body: JSON.stringify({ error: 'Method not allowed' }) };
 
     try {
         const { image } = JSON.parse(event.body);
         
-        // Call OpenAI with better prompt
+        // Optimize image size before sending
+        const optimizedImage = await optimizeImageSize(image);
+        
+        const startTime = Date.now();
+        console.log('Starting OpenAI call...');
+        
         const response = await fetch('https://api.openai.com/v1/chat/completions', {
             method: 'POST',
             headers: {
@@ -25,101 +25,74 @@ exports.handler = async (event, context) => {
                 'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
             },
             body: JSON.stringify({
-                model: "gpt-4o-mini",
+                model: "gpt-4o-mini", // Fastest model
                 messages: [{
                     role: "user",
                     content: [{
                         type: "text",
-                        text: "Analyze this menu image carefully. Extract ALL visible dishes and organize them by sections (like Appetizers, Mains, Desserts, etc.). For each dish, provide the EXACT name from the menu and original description if visible. Return ONLY valid JSON in this format: {\"sections\":[{\"name\":\"Section Name\",\"emoji\":\"🍽️\",\"dishes\":[{\"name\":\"Exact Dish Name from Menu\",\"originalDescription\":\"Exact description from menu or empty string if none\",\"aiExplanation\":\"Your helpful explanation in 200 characters or less\",\"hasWarnings\":false,\"isSpicy\":false}]}]}"
+                        text: "List menu dishes as JSON: {\"sections\":[{\"name\":\"Section\",\"emoji\":\"🍽️\",\"dishes\":[{\"name\":\"dish\",\"originalDescription\":\"desc\",\"aiExplanation\":\"explanation\"}]}]}"
                     }, {
                         type: "image_url",
-                        image_url: { url: `data:image/jpeg;base64,${image}` }
+                        image_url: { 
+                            url: `data:image/jpeg;base64,${optimizedImage}`,
+                            detail: "low" // Use low detail for speed
+                        }
                     }]
                 }],
-                max_tokens: 1500
+                max_tokens: 500, // Reduced for speed
+                temperature: 0.1 // Lower temperature for speed
             })
         });
 
-        const data = await response.json();
-        
+        const duration = Date.now() - startTime;
+        console.log(`OpenAI responded in ${duration}ms with status:`, response.status);
+
         if (!response.ok) {
-            throw new Error(`OpenAI error: ${data.error?.message || 'Unknown error'}`);
+            const error = await response.text();
+            console.log('OpenAI error:', error);
+            throw new Error(`OpenAI failed: ${response.status}`);
         }
 
-        let content = data.choices[0].message.content;
-        
-        // Clean up response
-        content = content.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+        const data = await response.json();
+        let content = data.choices[0].message.content.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
         
         const parsedContent = JSON.parse(content);
         
-        // Save to Supabase
-        await saveToDatabase(parsedContent, image.substring(0, 100)); // Save first 100 chars of image as identifier
+        console.log(`Total processing time: ${Date.now() - startTime}ms`);
         
         return {
             statusCode: 200,
             headers,
-            body: JSON.stringify({
-                success: true,
-                data: parsedContent
-            })
+            body: JSON.stringify({ success: true, data: parsedContent })
         };
 
     } catch (error) {
-        console.error('Function error:', error);
+        console.error('Function error:', error.message);
         return {
             statusCode: 500,
             headers,
-            body: JSON.stringify({
-                success: false,
-                error: error.message
-            })
+            body: JSON.stringify({ success: false, error: error.message })
         };
     }
 };
 
-// Function to save to Supabase
-async function saveToDatabase(menuData, imageIdentifier) {
+// Optimize image size for faster processing
+async function optimizeImageSize(base64Image) {
     try {
-        const { createClient } = require('@supabase/supabase-js');
+        // Decode base64 to get image info
+        const imageBuffer = Buffer.from(base64Image, 'base64');
         
-        const supabase = createClient(
-            process.env.SUPABASE_URL,
-            process.env.SUPABASE_SERVICE_KEY
-        );
-
-        // Save each dish to cache for future lookups
-        for (const section of menuData.sections) {
-            for (const dish of section.dishes) {
-                await supabase
-                    .from('menu_cache')
-                    .upsert({
-                        dish_name: dish.name.toLowerCase().trim(),
-                        original_description: dish.originalDescription,
-                        ai_explanation: dish.aiExplanation,
-                        has_warnings: dish.hasWarnings || false,
-                        is_spicy: dish.isSpicy || false,
-                        section_name: section.name,
-                        updated_at: new Date().toISOString()
-                    }, {
-                        onConflict: 'dish_name'
-                    });
-            }
+        // If image is larger than 1MB, it's probably too big
+        if (imageBuffer.length > 1024 * 1024) {
+            console.log('Large image detected, using low detail mode');
         }
-
-        // Save scan session
-        await supabase
-            .from('scan_sessions')
-            .insert({
-                image_identifier: imageIdentifier,
-                menu_data: menuData,
-                created_at: new Date().toISOString()
-            });
-
-        console.log('Saved to database successfully');
+        
+        // For now, return as-is but log size
+        console.log(`Image size: ${(imageBuffer.length / 1024).toFixed(0)}KB`);
+        return base64Image;
         
     } catch (error) {
-        console.error('Database save error:', error);
-        // Don't throw error - let the response succeed even if DB save fails
+        console.log('Image optimization failed, using original');
+        return base64Image;
     }
 }
