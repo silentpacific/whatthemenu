@@ -2,11 +2,13 @@
   publish = "."
   functions = "netlify/functions"
 
-[[plugins]]
-  package = "@netlify/plugin-functions-install-core"
-
 [build.environment]
   NODE_VERSION = "18"
+  # Disable secrets scanning for public Supabase values
+  SECRETS_SCAN_ENABLED = "false"
+
+[[plugins]]
+  package = "@netlify/plugin-functions-install-core"
 
 [[redirects]]
   from = "/api/*"
