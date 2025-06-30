@@ -9,6 +9,16 @@
     <!-- Preconnect to external domains -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-36SHN00S7N"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-36SHN00S7N');
+</script>
     
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -200,95 +210,108 @@
             <h2 class="section-title">Simple, One-Time Payments</h2>
             <p class="section-subtitle">No subscriptions, no recurring charges - buy only when you need it</p>
         </div>
-        <div class="pricing-cards">
-            <!-- Free Plan -->
-            <div class="pricing-card">
-                <div class="plan-icon">🎯</div>
-                <h3 class="plan-name">Try It Free</h3>
-                <p class="plan-description">Perfect for testing the app and getting a taste of what it can do</p>
-                
-                <div class="plan-price">
-                    <span class="price-amount">$0</span>
-                    <span class="price-period">to get started</span>
-                </div>
-
-                <div class="usage-indicator">
-                    <div class="usage-text">
-                        You currently have <span class="usage-highlight">3 of 5</span> free scans remaining
+        <div class="pricing-container">
+            <div class="pricing-cards" id="pricing-carousel">
+                <!-- Free Plan -->
+                <div class="pricing-card">
+                    <div class="plan-icon">🎯</div>
+                    <h3 class="plan-name">Try It Free</h3>
+                    <p class="plan-description">Perfect for testing the app and getting a taste of what it can do</p>
+                    
+                    <div class="plan-price">
+                        <span class="price-amount">$0</span>
+                        <span class="price-period">to get started</span>
                     </div>
+
+                    <div class="usage-indicator">
+                        <div class="usage-text">
+                            You currently have <span class="usage-highlight">3 of 5</span> free scans remaining
+                        </div>
+                    </div>
+
+                    <ul class="plan-features">
+                        <li>✅ 5 free menu scans</li>
+                        <li>✅ Up to 5 dishes explained per scan</li>
+                        <li>✅ All major languages</li>
+                        <li>✅ No signup required</li>
+                        <li>✅ Works on any device</li>
+                    </ul>
+
+                    <button class="plan-button secondary" onclick="scrollToUpload()">
+                        Use Free Scans
+                    </button>
                 </div>
 
-                <ul class="plan-features">
-                    <li>✅ 5 free menu scans</li>
-                    <li>✅ Up to 5 dishes explained per scan</li>
-                    <li>✅ All major languages</li>
-                    <li>✅ No signup required</li>
-                    <li>✅ Works on any device</li>
-                </ul>
+                <!-- Daily Pass Plan -->
+                <div class="pricing-card">
+                    <div class="plan-icon">⚡</div>
+                    <h3 class="plan-name">Daily Pass</h3>
+                    <p class="plan-description">Perfect for a day of exploring restaurants and trying new dishes</p>
+                    
+                    <div class="plan-price">
+                        <span class="price-amount">$1</span>
+                        <span class="price-period">for 1 day</span>
+                        <div class="price-note">Unlimited scans for 24 hours</div>
+                    </div>
 
-                <button class="plan-button secondary" onclick="scrollToUpload()">
-                    Use Free Scans
-                </button>
+                    <ul class="plan-features">
+                        <li>✅ Unlimited menu scans for 24 hours</li>
+                        <li>✅ All dishes explained on every menu</li>
+                        <li>✅ All major languages</li>
+                        <li>✅ Instant dish explanations</li>
+                        <li>✅ No commitments</li>
+                    </ul>
+
+                    <button class="plan-button secondary" onclick="buyDailyPass()">
+                        Get Daily Pass
+                    </button>
+                </div>
+
+                <!-- Weekly Pass Plan -->
+                <div class="pricing-card popular">
+                    <div class="popular-badge">Most Popular</div>
+                    <div class="plan-icon">🚀</div>
+                    <h3 class="plan-name">Weekly Pass</h3>
+                    <p class="plan-description">Perfect for travelers and food explorers who scan multiple menus</p>
+                    
+                    <div class="plan-price">
+                        <span class="price-amount">$5</span>
+                        <span class="price-period">for 7 days</span>
+                        <div class="price-note">Unlimited scans for a week</div>
+                    </div>
+
+                    <ul class="plan-features">
+                        <li>✅ Unlimited menu scans for 7 days</li>
+                        <li>✅ All dishes explained on every menu</li>
+                        <li>✅ All major languages</li>
+                        <li>✅ Priority processing</li>
+                        <li>✅ Perfect for trips</li>
+                    </ul>
+
+                    <button class="plan-button primary" onclick="buyWeeklyPass()">
+                        Get Weekly Pass
+                    </button>
+                </div>
             </div>
-
-            <!-- Daily Pass Plan -->
-            <div class="pricing-card">
-                <div class="plan-icon">⚡</div>
-                <h3 class="plan-name">Daily Pass</h3>
-                <p class="plan-description">Perfect for a day of exploring restaurants and trying new dishes</p>
-                
-                <div class="plan-price">
-                    <span class="price-amount">$1</span>
-                    <span class="price-period">for 1 day</span>
-                    <div class="price-note">Unlimited scans for 24 hours</div>
-                </div>
-
-                <ul class="plan-features">
-                    <li>✅ Unlimited menu scans for 24 hours</li>
-                    <li>✅ All dishes explained on every menu</li>
-                    <li>✅ All major languages</li>
-                    <li>✅ Instant dish explanations</li>
-                    <li>✅ No commitments</li>
-                </ul>
-
-                <button class="plan-button secondary" onclick="buyDailyPass()">
-                    Get Daily Pass
-                </button>
-            </div>
-
-            <!-- Weekly Pass Plan -->
-            <div class="pricing-card popular">
-                <div class="popular-badge">Most Popular</div>
-                <div class="plan-icon">🚀</div>
-                <h3 class="plan-name">Weekly Pass</h3>
-                <p class="plan-description">Perfect for travelers and food explorers who scan multiple menus</p>
-                
-                <div class="plan-price">
-                    <span class="price-amount">$5</span>
-                    <span class="price-period">for 7 days</span>
-                    <div class="price-note">Unlimited scans for a week</div>
-                </div>
-
-                <ul class="plan-features">
-                    <li>✅ Unlimited menu scans for 7 days</li>
-                    <li>✅ All dishes explained on every menu</li>
-                    <li>✅ All major languages</li>
-                    <li>✅ Priority processing</li>
-                    <li>✅ Perfect for trips</li>
-                </ul>
-
-                <button class="plan-button primary" onclick="buyWeeklyPass()">
-                    Get Weekly Pass
-                </button>
+            
+            <!-- Mobile Carousel Navigation -->
+            <button class="carousel-arrow left-arrow" id="prev-btn">‹</button>
+            <button class="carousel-arrow right-arrow" id="next-btn">›</button>
+            
+            <div class="scroll-hint">
+                ← Swipe to see all plans
             </div>
         </div>
     </div>
 </section>
 
 
+
+
     <!-- Footer -->
 <!-- Footer -->
-<footer style="background: white; border-top: 1px solid rgba(8, 145, 178, 0.1); margin-top: auto;">
+html<footer style="background: #e2e8f0; border-top: 1px solid rgba(8, 145, 178, 0.3); margin-top: auto;">
+
     <div style="max-width: 1200px; margin: 0 auto; padding: 3rem 1.5rem 2rem;">
         <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 3rem; margin-bottom: 2rem;">
             <!-- Logo Section -->
@@ -369,5 +392,204 @@ footer a:hover {
     <script src="js/utils.js"></script>
 <script src="js/user-tracking.js"></script>
     <script src="js/main.js"></script>
+
+
+<style>
+    /* Mobile Pricing Carousel Styles */
+    @media (max-width: 768px) {
+        .pricing-container {
+            position: relative;
+            padding: 0 1rem;
+        }
+        
+        .pricing-cards {
+            display: flex !important;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            scroll-behavior: smooth;
+            gap: 1rem;
+            padding: 0 0.5rem;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        
+        .pricing-cards::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .pricing-card {
+            flex: 0 0 85%;
+            scroll-snap-align: center;
+            min-width: 280px;
+            max-width: 320px;
+        padding-left: 1.5rem; /* Add left padding for mobile */
+        padding-right: 1.5rem; /* Add right padding for mobile */
+        }
+        
+        .left-arrow {
+            position: absolute;
+            left: -20px;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 10;
+        }
+        
+        .right-arrow {
+            position: absolute;
+            right: -20px;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 10;
+        }
+        
+        .carousel-arrow {
+            background: #0891b2;
+            color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(8, 145, 178, 0.3);
+        }
+        
+        .carousel-arrow:hover {
+            background: #0e7490;
+            transform: scale(1.05);
+        }
+        
+        .carousel-arrow:disabled {
+            background: #cbd5e1;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .scroll-hint {
+            text-align: center;
+            color: #64748b;
+            font-size: 0.9rem;
+            margin-top: 1rem;
+            font-weight: 500;
+        }
+    }
+    
+    /* Hide carousel navigation on desktop */
+    @media (min-width: 769px) {
+        .left-arrow, .right-arrow {
+            display: none;
+        }
+        .scroll-hint {
+            display: none;
+        }
+    }
+</style>
+
+<script>
+    // Mobile Pricing Carousel Functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        const carousel = document.getElementById('pricing-carousel');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+
+        let currentSlide = 0; // Start with Free Tier (first card)
+        
+        // Only run carousel logic on mobile
+        function isMobile() {
+            return window.innerWidth <= 768;
+        }
+        
+        function updateCarousel() {
+            if (!isMobile()) return;
+            
+            const cardWidth = carousel.querySelector('.pricing-card').offsetWidth + 16; // card width + gap
+            carousel.scrollTo({
+                left: currentSlide * cardWidth,
+                behavior: 'smooth'
+            });
+            
+            // Update arrow states
+            prevBtn.disabled = currentSlide === 0;
+            nextBtn.disabled = currentSlide === 2;
+        }
+        
+        function goToSlide(slideIndex) {
+            currentSlide = slideIndex;
+            updateCarousel();
+        }
+
+function forceStartPosition() {
+    if (isMobile() && carousel) {
+        // Use immediate scrolling (no smooth behavior) for initial position
+        carousel.scrollLeft = 0;
+        currentSlide = 0;
+        console.log('Forced to start position, scrollLeft:', carousel.scrollLeft);
+        
+        // Update arrow states
+        prevBtn.disabled = true;  // Should be disabled at start
+        nextBtn.disabled = false;
+    }
+}
+
+        
+        // Arrow click handlers
+        prevBtn.addEventListener('click', () => {
+            if (currentSlide > 0) {
+                currentSlide--;
+                updateCarousel();
+            }
+        });
+        
+        nextBtn.addEventListener('click', () => {
+            if (currentSlide < 2) {
+                currentSlide++;
+                updateCarousel();
+            }
+        });
+        
+        // Handle scroll events for updates
+        let scrollTimeout;
+        carousel.addEventListener('scroll', () => {
+            if (!isMobile()) return;
+            
+            clearTimeout(scrollTimeout);
+            scrollTimeout = setTimeout(() => {
+                const cardWidth = carousel.querySelector('.pricing-card').offsetWidth + 16;
+                const scrollLeft = carousel.scrollLeft;
+                const newSlide = Math.round(scrollLeft / cardWidth);
+                
+                if (newSlide !== currentSlide) {
+                    currentSlide = newSlide;
+                    
+                    prevBtn.disabled = currentSlide === 0;
+                    nextBtn.disabled = currentSlide === 2;
+                }
+            }, 100);
+        });
+        
+// Initialize carousel on mobile with delay
+if (isMobile()) {
+    // Add a small delay to ensure CSS layout is complete
+    setTimeout(() => {
+        forceStartPosition();
+        updateCarousel();
+    }, 100);
+}
+        
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            if (isMobile()) {
+                updateCarousel();
+            }
+        });
+    });
+</script>
+
+
 </body>
 </html>

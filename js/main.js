@@ -247,16 +247,21 @@ class MenuScanner {
                 file_type: this.currentFile.type
             });
 
+            // Track GA4 scan attempt
+            trackScanAttempt(targetLanguage);
+
             // Make API request
             const result = await Utils.api.scanMenu(this.currentFile, targetLanguage);
 
             if (result.success) {
                 this.displayResults(result.data);
                 Utils.analytics.trackScan(targetLanguage, true);
+                trackScanResult(true, targetLanguage);
                 Utils.feedback.showSuccess(CONFIG.SUCCESS_MESSAGES.SCAN_COMPLETE);
             } else {
                 this.displayError(result.error);
                 Utils.analytics.trackScan(targetLanguage, false);
+                trackScanResult(false, targetLanguage);
                 Utils.analytics.trackError(result.error, 'scan_menu');
             }
 
@@ -264,6 +269,7 @@ class MenuScanner {
             console.error('Scan error:', error);
             this.displayError(error.message || CONFIG.ERROR_MESSAGES.GENERIC_ERROR);
             Utils.analytics.trackError(error.message, 'scan_exception');
+            trackScanResult(false, targetLanguage);
         } finally {
             this.isProcessing = false;
             Utils.dom.removeLoading(scanBtn);
@@ -465,7 +471,6 @@ if (CONFIG.DEBUG) {
     console.log('🎯 Main app loaded. Try window.resetDemo() to reset the upload demo.');
 }
 
-
 // Pricing button functions
 function scrollToUpload() {
     const uploadArea = document.getElementById('upload-area');
@@ -480,9 +485,40 @@ function scrollToUpload() {
 }
 
 async function buyDailyPass() {
+    trackPricingClick('daily_pass');
     await initiatePurchase('daily_pass', 'Daily Pass - $1 for unlimited scans (24 hours)');
 }
 
 async function buyWeeklyPass() {
+    trackPricingClick('weekly_pass');
     await initiatePurchase('weekly_pass', 'Weekly Pass - $5 for unlimited scans (7 days)');
+}
+
+// GA4 Tracking Functions
+function trackScanAttempt(language) {
+    if (typeof gtag !== 'undefined') {
+        gtag('event', 'scan_attempt', {
+            'target_language': language,
+            'event_category': 'engagement'
+        });
+    }
+}
+
+function trackScanResult(success, language) {
+    if (typeof gtag !== 'undefined') {
+        gtag('event', 'scan_complete', {
+            'success': success,
+            'target_language': language,
+            'event_category': 'conversion'
+        });
+    }
+}
+
+function trackPricingClick(plan) {
+    if (typeof gtag !== 'undefined') {
+        gtag('event', 'pricing_click', {
+            'plan_type': plan,
+            'event_category': 'conversion'
+        });
+    }
 }

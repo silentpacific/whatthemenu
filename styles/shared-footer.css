@@ -1,7 +1,7 @@
 /* Footer styles for all pages */
 .shared-footer {
-    background: white;
-    border-top: 1px solid rgba(8, 145, 178, 0.1);
+    background: #f8fafc;  /* Light gray background for contrast */
+    border-top: 1px solid rgba(8, 145, 178, 0.2);  /* Slightly stronger border */
     margin-top: auto;
 }
 
