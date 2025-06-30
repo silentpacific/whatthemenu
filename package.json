@@ -19,6 +19,7 @@
   "author": "What The Menu Team",
   "license": "MIT",
   "dependencies": {
+    "node-fetch": "^2.6.7",
     "openai": "^4.20.1",
     "stripe": "^14.7.0"
   },
