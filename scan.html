@@ -265,11 +265,8 @@
     </footer>
 
     <script>
-        // Replace with your actual Supabase credentials
-        const SUPABASE_URL = 'https://tibeuchezcksymjivgwr.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRpYmV1Y2hlemNrc3ltaml2Z3dyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTEwMTQyNDAsImV4cCI6MjA2NjU5MDI0MH0.hx8ocUMZQaAvo50L_KtI9FuH4lklAT5N1th-H4njVrw';
-        
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// Use configuration from config.js
+const supabase = CONFIG.getSupabaseClient();
         let currentUser = null;
         
         // Initialize the page
