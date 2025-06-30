@@ -2,8 +2,13 @@
 
 // API Configuration
 const CONFIG = {
+    // OpenAI Configuration
+    OPENAI_API_KEY: `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`,
+    OPENAI_API_URL: 'https://api.openai.com/v1/chat/completions',
+    
     // API Endpoints
     API_BASE_URL: '/.netlify/functions',
+
     ENDPOINTS: {
         SCAN_MENU: '/scan-menu',
         CREATE_PAYMENT: '/create-payment'

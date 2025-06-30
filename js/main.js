@@ -174,6 +174,11 @@ class MenuScanner {
     async callOpenAI(file) {
         // Convert file to base64
         const base64 = await this.fileToBase64(file);
+
+    console.log('🔍 API Key exists:', !!CONFIG.OPENAI_API_KEY);
+    console.log('🔍 API URL:', CONFIG.OPENAI_API_URL);
+    console.log('🔍 API Key starts with sk-:', CONFIG.OPENAI_API_KEY.startsWith('sk-'));
+    
         
         try {
             const response = await fetch(CONFIG.OPENAI_API_URL, {
@@ -183,14 +188,14 @@ class MenuScanner {
                     'Authorization': `Bearer ${CONFIG.OPENAI_API_KEY}`
                 },
                 body: JSON.stringify({
-                    model: "gpt-4-vision-preview",
+                    model: "gpt-4o",
                     messages: [
                         {
                             role: "user",
                             content: [
                                 {
                                     type: "text",
-                                    text: "Please analyze this menu image and extract all the dishes with their descriptions and prices. Format the response as JSON with an array of dishes, each containing: name, description, price. If you can detect the original language, include it as 'sourceLanguage'."
+                                    text: "Analyze this menu image and organize the dishes by sections (like Appetizers, Main Courses, etc.). Return JSON with this exact structure: {\"sections\":[{\"name\":\"Appetizers\",\"emoji\":\"🥗\",\"dishes\":[{\"name\":\"Dish Name\",\"originalDescription\":\"Original text from menu\",\"aiExplanation\":\"User-friendly explanation up to 300 characters\",\"hasWarnings\":false,\"allergens\":[],\"isSpicy\":false}]}]}"
                                 },
                                 {
                                     type: "image_url",
@@ -205,36 +210,49 @@ class MenuScanner {
                 })
             });
 
+        console.log('🔍 Response status:', response.status);
+        console.log('🔍 Response headers:', response.headers);
+
             if (!response.ok) {
                 throw new Error(`OpenAI API error: ${response.status}`);
             }
 
-            const data = await response.json();
-            const content = data.choices[0].message.content;
-            
-            // Try to parse JSON response
-            try {
-                const parsedContent = JSON.parse(content);
-                return {
-                    success: true,
-                    data: {
-                        dishes: parsedContent.dishes || [],
-                        sourceLanguage: parsedContent.sourceLanguage || 'unknown',
-                        targetLanguage: 'en'
-                    }
-                };
-            } catch (e) {
-                // If not JSON, return as plain text
-                return {
-                    success: true,
-                    data: {
-                        translation: content,
-                        dishes: [],
-                        sourceLanguage: 'unknown',
-                        targetLanguage: 'en'
-                    }
-                };
-            }
+const data = await response.json();
+let content = data.choices[0].message.content;
+
+console.log('🔍 Raw OpenAI response:', content);
+
+// Clean up the content if it has markdown formatting
+if (content.includes('```json')) {
+    content = content.replace(/```json\s*/g, '').replace(/```\s*/g, '');
+}
+
+// Try to parse JSON response
+try {
+    const parsedContent = JSON.parse(content);
+    console.log('🔍 Parsed JSON:', parsedContent);
+    
+    return {
+        success: true,
+        data: {
+            dishes: parsedContent.dishes || [],
+            sourceLanguage: parsedContent.sourceLanguage || 'unknown',
+            targetLanguage: 'en'
+        }
+    };
+} catch (e) {
+    console.log('🔍 JSON parse failed, treating as text:', e);
+    // If not JSON, return as plain text
+    return {
+        success: true,
+        data: {
+            translation: content,
+            dishes: [],
+            sourceLanguage: 'unknown',
+            targetLanguage: 'en'
+        }
+    };
+}
 
         } catch (error) {
             console.error('OpenAI API error:', error);
@@ -280,51 +298,23 @@ class MenuScanner {
         `;
     }
 
-    displayResults(data) {
-        const resultsContainer = document.getElementById('analysis-results');
-        if (!resultsContainer) return;
-
-        const { translation, dishes = [], sourceLanguage, targetLanguage } = data;
-
-        let html = `
-            <div class="scan-results">
-                <div class="results-header">
-                    <div class="success-badge">Menu analysis complete!</div>
-                    <h2>Menu Translation</h2>
-                    <p>Extracted from menu</p>
-                </div>
-        `;
-
-        if (dishes.length > 0) {
-            html += `
-                <div class="dishes-list">
-                    ${dishes.map(dish => `
-                        <div class="dish-card">
-                            <h4>${dish.name || 'Unknown Dish'}</h4>
-                            ${dish.description ? `<p><strong>Description:</strong> ${dish.description}</p>` : ''}
-                            ${dish.price ? `<p><strong>Price:</strong> ${dish.price}</p>` : ''}
-                        </div>
-                    `).join('')}
-                </div>
-            `;
-        } else if (translation) {
-            html += `
-                <div class="raw-response">
-                    <h3>Menu Content</h3>
-                    <p>${translation}</p>
-                </div>
-            `;
-        }
-
-        html += `
-                <div class="results-footer">
-                    <p>✨ Powered by AI • Results may vary</p>
-                </div>
-            </div>
-        `;
-
-        resultsContainer.innerHTML = html;
-    }
+displayResults(data) {
+    // Save results to sessionStorage for the results page
+    const resultsData = {
+        sections: data.sections || [],
+        timestamp: Date.now(),
+        sourceLanguage: data.sourceLanguage || 'unknown',
+        targetLanguage: data.targetLanguage || 'en',
+        // Keep backward compatibility with old format
+        dishes: data.dishes || [],
+        translation: data.translation
+    };
+    
+    sessionStorage.setItem('menuResults', JSON.stringify(resultsData));
+    
+    // Redirect to results page
+    window.location.href = 'results.html';
+}
 
     displayError(errorMessage) {
         const resultsContainer = document.getElementById('analysis-results');

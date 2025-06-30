@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Menu Results - What The Menu?</title>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Nunito', sans-serif;
+            background: #f8fafc;
+            color: #334155;
+            line-height: 1.6;
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Header - Your actual header styles */
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(8, 145, 178, 0.1);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            transition: all 0.3s ease;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1.5rem;
+        }
+        
+        .header-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 0;
+            min-height: 80px;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            text-decoration: none;
+            transition: transform 0.3s ease;
+        }
+        
+        .logo:hover {
+            transform: scale(1.02);
+        }
+        
+        .logo-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #0891b2, #06b6d4);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            box-shadow: 0 4px 12px rgba(8, 145, 178, 0.3);
+        }
+        
+        .logo-text {
+            font-family: 'Nunito', sans-serif;
+            font-size: 1.6rem;
+            font-weight: 900;
+            color: #0891b2;
+            letter-spacing: -0.5px;
+        }
+        
+        .nav {
+            display: none; /* Hidden on mobile */
+        }
+        
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+        
+        .user-icon {
+            width: 40px;
+            height: 40px;
+            background: #f1f5f9;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            color: inherit;
+        }
+        
+        .user-icon:hover {
+            background: #e2e8f0;
+            transform: scale(1.05);
+            border: 2px solid #0891b2;
+        }
+        
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            padding-top: 80px; /* Account for fixed header */
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Page Title */
+        .page-title-section {
+            background: white;
+            padding: 1.5rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .page-title {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #1e293b;
+            text-align: center;
+            margin: 0;
+        }
+        
+        /* Results Container */
+        .results-container {
+            flex: 1;
+            padding: 1rem;
+        }
+        
+        .menu-section {
+            background: white;
+            border-radius: 12px;
+            margin-bottom: 1rem;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .section-header {
+            background: #1e293b;
+            color: white;
+            padding: 1rem 1.25rem;
+            font-weight: 700;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .dish-item {
+            border-bottom: 1px solid #f1f5f9;
+            transition: background-color 0.2s ease;
+        }
+        
+        .dish-item:last-child {
+            border-bottom: none;
+        }
+        
+        .dish-header {
+            padding: 1rem 1.25rem;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: white;
+            transition: background-color 0.2s ease;
+        }
+        
+        .dish-header:hover {
+            background: #f8fafc;
+        }
+        
+        .dish-header.expanded {
+            background: #f0f9ff;
+            border-bottom: 1px solid #e0f2fe;
+        }
+        
+        .dish-info {
+            flex: 1;
+        }
+        
+        .dish-name {
+            font-weight: 700;
+            font-size: 1rem;
+            color: #1e293b;
+            margin-bottom: 0.25rem;
+        }
+        
+        .dish-original-desc {
+            font-size: 0.875rem;
+            color: #64748b;
+            font-style: italic;
+            line-height: 1.4;
+        }
+        
+        .expand-icon {
+            background: #f1f5f9;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.875rem;
+            color: #64748b;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+        }
+        
+        .dish-header.expanded .expand-icon {
+            background: #0891b2;
+            color: white;
+            transform: rotate(180deg);
+        }
+        
+        .dish-explanation {
+            display: none;
+            padding: 1rem 1.25rem;
+            background: #f0f9ff;
+            border-top: 1px solid #e0f2fe;
+            font-size: 0.875rem;
+            line-height: 1.6;
+            color: #1e293b;
+        }
+        
+        .dish-explanation.visible {
+            display: block;
+            animation: slideDown 0.3s ease-out;
+        }
+        
+        .dish-explanation.warning {
+            background: #fef2f2;
+            border-top-color: #fecaca;
+            color: #991b1b;
+        }
+        
+        .dish-locked {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+        
+        .lock-badge {
+            background: #9ca3af;
+            color: white;
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 12px;
+            font-weight: 600;
+            margin-left: 0.5rem;
+        }
+        
+        /* Page Actions Section at Bottom */
+        .page-actions-section {
+            background: white;
+            border-top: 1px solid #e2e8f0;
+            padding: 1.5rem;
+            margin-top: 1rem;
+        }
+        
+        .actions-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+        
+        .page-actions {
+            display: flex;
+            gap: 0.75rem;
+            justify-content: center;
+            margin-bottom: 1rem;
+        }
+        
+        .action-btn {
+            flex: 1;
+            max-width: 140px;
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            padding: 0.75rem 1rem;
+            border-radius: 12px;
+            font-family: 'Nunito', sans-serif;
+            font-weight: 600;
+            font-size: 0.875rem;
+            color: #64748b;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        
+        .action-btn:hover {
+            border-color: #0891b2;
+            color: #0891b2;
+            background: rgba(8, 145, 178, 0.05);
+        }
+        
+        .action-btn.primary {
+            background: #0891b2;
+            border-color: #0891b2;
+            color: white;
+        }
+        
+        .action-btn.primary:hover {
+            background: #0e7490;
+            border-color: #0e7490;
+        }
+        
+        .scan-status {
+            text-align: center;
+            font-size: 0.875rem;
+            color: #64748b;
+        }
+        
+        .scan-status .scans-used {
+            color: #0891b2;
+            font-weight: 700;
+        }
+        
+        /* Footer - Exactly matching your index.html */
+        .site-footer {
+            background: #e2e8f0;
+            border-top: 1px solid rgba(8, 145, 178, 0.3);
+            margin-top: auto;
+        }
+        
+        .footer-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 3rem 1.5rem 2rem;
+        }
+        
+        .footer-content {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr;
+            gap: 3rem;
+            margin-bottom: 2rem;
+        }
+        
+        .footer-logo-section {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .footer-logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .footer-logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #0891b2, #06b6d4);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            box-shadow: 0 4px 12px rgba(8, 145, 178, 0.3);
+        }
+        
+        .footer-logo-text {
+            font-family: 'Nunito', sans-serif;
+            font-size: 1.4rem;
+            font-weight: 900;
+            color: #0891b2;
+            letter-spacing: -0.5px;
+        }
+        
+        .footer-description {
+            font-size: 1rem;
+            color: #64748b;
+            line-height: 1.6;
+            max-width: 300px;
+            font-weight: 500;
+            margin: 0;
+        }
+        
+        .footer-section-title {
+            font-family: 'Nunito', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: #1e293b;
+            margin-bottom: 1rem;
+        }
+        
+        .footer-link {
+            color: #64748b;
+            text-decoration: none;
+            font-size: 0.95rem;
+            font-weight: 500;
+            padding: 0.25rem 0;
+            transition: color 0.3s ease;
+            display: block;
+        }
+        
+        .footer-link:hover {
+            color: #0891b2;
+        }
+        
+        .footer-bottom {
+            border-top: 1px solid #e2e8f0;
+            padding-top: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9rem;
+            color: #64748b;
+        }
+        
+        .footer-copyright {
+            font-weight: 500;
+        }
+        
+        .footer-security {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 600;
+            color: #10b981;
+        }
+        
+        /* Mobile footer styles matching index.html */
+        @media (max-width: 768px) {
+            .footer-container {
+                padding: 1.5rem 1.5rem 1rem;
+            }
+            
+            .footer-content {
+                grid-template-columns: 1fr !important;
+                gap: 1.5rem;
+                text-align: center;
+                margin-bottom: 1rem;
+            }
+            
+            .footer-content > div {
+                margin-bottom: 0;
+            }
+            
+            .footer-bottom {
+                flex-direction: column !important;
+                gap: 0.75rem;
+                text-align: center;
+                padding-top: 1rem;
+            }
+        }
+        
+        /* Animations */
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                max-height: 0;
+            }
+            to {
+                opacity: 1;
+                max-height: 200px;
+            }
+        }
+        
+        /* Modal Overlay */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .modal {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            transform: translateY(20px);
+            transition: transform 0.3s ease;
+        }
+        
+        .modal-overlay.active .modal {
+            transform: translateY(0);
+        }
+        
+        .modal-header {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+        
+        .modal-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 0.5rem;
+        }
+        
+        .modal-subtitle {
+            font-size: 0.875rem;
+            color: #64748b;
+        }
+        
+        .scan-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .scan-option {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 1.5rem 1rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            color: inherit;
+        }
+        
+        .scan-option:hover {
+            border-color: #0891b2;
+            background: #f8faff;
+        }
+        
+        .scan-option-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .scan-option-label {
+            font-size: 0.875rem;
+            font-weight: 600;
+            text-align: center;
+        }
+        
+        .modal-close {
+            background: #f1f5f9;
+            border: none;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            font-family: 'Nunito', sans-serif;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <a href="/" class="logo">
+                    <div class="logo-icon">🤔</div>
+                    <div class="logo-text">What The Menu?</div>
+                </a>
+                <nav class="nav">
+                    <a href="#how-it-works" class="nav-link">How It Works</a>
+                    <a href="#pricing" class="nav-link">Pricing</a>
+                </nav>
+                <div class="header-actions">
+                    <a href="login.html" class="user-icon">👤</a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Page Title -->
+        <section class="page-title-section">
+            <h1 class="page-title">Menu Results</h1>
+        </section>
+
+        <!-- Menu Results -->
+        <section class="results-container">
+            <!-- Appetizers Section -->
+            <div class="menu-section">
+                <div class="section-header">
+                    🥗 Appetizers
+                </div>
+                
+                <div class="dish-item">
+                    <div class="dish-header" onclick="toggleExplanation(this)">
+                        <div class="dish-info">
+                            <div class="dish-name">Bruschetta Classica</div>
+                            <div class="dish-original-desc">Toasted bread with fresh tomatoes, basil, and garlic</div>
+                        </div>
+                        <div class="expand-icon">▼</div>
+                    </div>
+                    <div class="dish-explanation">
+                        Traditional Italian appetizer with crispy bread, fresh tomatoes, basil and garlic. Light, refreshing starter perfect for sharing. Usually served as antipasto and pairs well with wine. The bread is typically rubbed with garlic for extra flavor depth.
+                    </div>
+                </div>
+                
+                <div class="dish-item">
+                    <div class="dish-header" onclick="toggleExplanation(this)">
+                        <div class="dish-info">
+                            <div class="dish-name">Calamari Fritti</div>
+                            <div class="dish-original-desc">Golden fried squid rings with marinara sauce</div>
+                        </div>
+                        <div class="expand-icon">▼</div>
+                    </div>
+                    <div class="dish-explanation">
+                        Crispy battered and fried squid rings served with tangy marinara dipping sauce. Popular Mediterranean seafood appetizer with tender interior and crunchy exterior. Great for sharing and pairs well with white wine or beer.
+                    </div>
+                </div>
+                
+                <!-- Locked dish for free users -->
+                <div class="dish-item dish-locked">
+                    <div class="dish-header">
+                        <div class="dish-info">
+                            <div class="dish-name">
+                                Spinach Artichoke Dip
+                                <span class="lock-badge">🔒 LOCKED</span>
+                            </div>
+                            <div class="dish-original-desc">Creamy blend with tortilla chips</div>
+                        </div>
+                        <div class="expand-icon">▼</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Courses Section -->
+            <div class="menu-section">
+                <div class="section-header">
+                    🍝 Main Courses
+                </div>
+                
+                <div class="dish-item">
+                    <div class="dish-header" onclick="toggleExplanation(this)">
+                        <div class="dish-info">
+                            <div class="dish-name">Spicy Arrabbiata</div>
+                            <div class="dish-original-desc">Penne pasta in spicy tomato sauce</div>
+                        </div>
+                        <div class="expand-icon">▼</div>
+                    </div>
+                    <div class="dish-explanation warning">
+                        ⚠️ Spicy pasta with penne in fiery tomato sauce containing chili peppers. Traditional Roman "angry" recipe that packs serious heat. May be too intense for sensitive palates. The dish gets its name from the spiciness level.
+                    </div>
+                </div>
+                
+                <div class="dish-item">
+                    <div class="dish-header" onclick="toggleExplanation(this)">
+                        <div class="dish-info">
+                            <div class="dish-name">Risotto ai Funghi</div>
+                            <div class="dish-original-desc">Creamy rice with wild mushrooms and parmesan</div>
+                        </div>
+                        <div class="expand-icon">▼</div>
+                    </div>
+                    <div class="dish-explanation">
+                        Rich, creamy Italian rice dish slowly cooked with wild mushrooms and finished with parmesan cheese. Comfort food that's hearty and satisfying. The rice has a creamy texture while maintaining a slight bite. Perfect for vegetarians.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Desserts Section -->
+            <div class="menu-section">
+                <div class="section-header">
+                    🍰 Desserts
+                </div>
+                
+                <div class="dish-item">
+                    <div class="dish-header" onclick="toggleExplanation(this)">
+                        <div class="dish-info">
+                            <div class="dish-name">Tiramisu</div>
+                            <div class="dish-original-desc">Coffee-soaked ladyfingers with mascarpone cream</div>
+                        </div>
+                        <div class="expand-icon">▼</div>
+                    </div>
+                    <div class="dish-explanation">
+                        Classic Italian dessert featuring layers of coffee-soaked ladyfinger cookies and rich mascarpone cream, dusted with cocoa powder. Creamy, indulgent finish to any meal. The name means "pick me up" in Italian, referring to the coffee content.
+                    </div>
+                </div>
+                
+                <!-- Locked dish -->
+                <div class="dish-item dish-locked">
+                    <div class="dish-header">
+                        <div class="dish-info">
+                            <div class="dish-name">
+                                Gelato Selection
+                                <span class="lock-badge">🔒 LOCKED</span>
+                            </div>
+                            <div class="dish-original-desc">Three scoops of artisanal gelato</div>
+                        </div>
+                        <div class="expand-icon">▼</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Page Actions at Bottom -->
+        <section class="page-actions-section">
+            <h2 class="actions-title">What's Next?</h2>
+            <div class="page-actions">
+                <button class="action-btn" onclick="showHistory()">
+                    📋 History
+                </button>
+                <button class="action-btn primary" onclick="showScanOptions()">
+                    📷 Scan Another
+                </button>
+            </div>
+            <div class="scan-status">
+                <span class="scans-used">2</span> of 5 free scans remaining
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer - Exactly matching index.html -->
+    <footer class="site-footer">
+        <div class="footer-container">
+            <div class="footer-content">
+                <!-- Logo Section -->
+                <div class="footer-logo-section">
+                    <div class="footer-logo">
+                        <div class="footer-logo-icon">🤔</div>
+                        <div class="footer-logo-text">What The Menu?</div>
+                    </div>
+                    <p class="footer-description">
+                        Never wonder what's on the menu again.
+                    </p>
+                </div>
+                
+                <!-- Legal Section -->
+                <div>
+                    <h3 class="footer-section-title">Legal</h3>
+                    <a href="privacy.html" class="footer-link">Privacy Policy</a>
+                    <a href="terms.html" class="footer-link">Terms of Service</a>
+                    <a href="contact.html" class="footer-link">Contact</a>
+                </div>
+                
+                <!-- Languages Section -->
+                <div>
+                    <h3 class="footer-section-title">Languages</h3>
+                    <div style="margin: 1rem 0;">
+                        <span style="color: #64748b; font-size: 0.9rem; line-height: 1.5; font-weight: 500;">English, Spanish, French, Italian, German, Japanese, Korean, Chinese</span>
+                    </div>
+                    <p style="color: #64748b; font-size: 0.95rem; font-weight: 500; margin: 0;">+ 42 more languages</p>
+                </div>
+            </div>
+            
+            <!-- Bottom Section -->
+            <div class="footer-bottom">
+                <div class="footer-copyright">
+                    © 2025 What The Menu? All rights reserved.
+                </div>
+                <div class="footer-security">
+                    🔒 Secure payments by Stripe
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scan Options Modal -->
+    <div class="modal-overlay" id="scanModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">How would you like to scan?</h3>
+                <p class="modal-subtitle">Choose your preferred method to add another menu page</p>
+            </div>
+            
+            <div class="scan-options">
+                <div class="scan-option" onclick="selectScanOption('camera')">
+                    <div class="scan-option-icon">📸</div>
+                    <div class="scan-option-label">Take Photo</div>
+                </div>
+                
+                <div class="scan-option" onclick="selectScanOption('upload')">
+                    <div class="scan-option-icon">🖼️</div>
+                    <div class="scan-option-label">Upload Photo</div>
+                </div>
+                
+                <div class="scan-option" onclick="selectScanOption('file')">
+                    <div class="scan-option-icon">📄</div>
+                    <div class="scan-option-label">Upload File</div>
+                </div>
+                
+                <div class="scan-option" onclick="selectScanOption('drive')">
+                    <div class="scan-option-icon">☁️</div>
+                    <div class="scan-option-label">Google Drive</div>
+                </div>
+            </div>
+            
+            <button class="modal-close" onclick="hideScanOptions()">Cancel</button>
+        </div>
+    </div>
+
+    <script>
+        // Toggle dish explanation
+        function toggleExplanation(headerElement) {
+            const explanation = headerElement.nextElementSibling;
+            const isExpanded = headerElement.classList.contains('expanded');
+            
+            if (isExpanded) {
+                // Collapse
+                headerElement.classList.remove('expanded');
+                explanation.classList.remove('visible');
+            } else {
+                // Expand
+                headerElement.classList.add('expanded');
+                explanation.classList.add('visible');
+            }
+        }
+        
+        // Show scan options modal
+        function showScanOptions() {
+            document.getElementById('scanModal').classList.add('active');
+        }
+        
+        // Hide scan options modal
+        function hideScanOptions() {
+            document.getElementById('scanModal').classList.remove('active');
+        }
+        
+        // Handle scan option selection
+        function selectScanOption(type) {
+            console.log('Selected scan option:', type);
+            hideScanOptions();
+            // Here you would implement the actual scan functionality
+            switch(type) {
+                case 'camera':
+                    // Open camera
+                    break;
+                case 'upload':
+                    // Open file picker for images
+                    break;
+                case 'file':
+                    // Open file picker for documents
+                    break;
+                case 'drive':
+                    // Open Google Drive integration
+                    break;
+            }
+        }
+        
+        // Show history (placeholder)
+        function showHistory() {
+            alert('History functionality would be implemented here');
+        }
+        
+        // Close modal when clicking outside
+        document.getElementById('scanModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                hideScanOptions();
+            }
+        });
+    </script>
+
+<script>
+// Results page functionality - loads real data from sessionStorage
+class ResultsPage {
+    constructor() {
+        this.init();
+    }
+
+    init() {
+        this.loadMenuData();
+        this.updateScanCounter();
+    }
+
+    loadMenuData() {
+        // Get data from sessionStorage
+        const resultsData = sessionStorage.getItem('menuResults');
+        
+        if (!resultsData) {
+            // No data found, redirect to homepage
+            console.log('No menu data found, redirecting to homepage');
+            window.location.href = '/';
+            return;
+        }
+
+        try {
+            const data = JSON.parse(resultsData);
+            console.log('Loaded menu data:', data);
+            
+            // Check if we have structured sections data or legacy format
+            if (data.sections && data.sections.length > 0) {
+                this.renderSections(data.sections);
+            } else if (data.dishes && data.dishes.length > 0) {
+                // Legacy format - convert to sections
+                this.renderLegacyDishes(data.dishes);
+            } else if (data.translation) {
+                // Raw text format
+                this.renderRawText(data.translation);
+            } else {
+                this.showNoDataMessage();
+            }
+        } catch (error) {
+            console.error('Error parsing menu data:', error);
+            this.showErrorMessage();
+        }
+    }
+
+    renderSections(sections) {
+        const container = document.querySelector('.results-container');
+        if (!container) return;
+
+        // Clear existing content
+        container.innerHTML = '';
+
+        sections.forEach(section => {
+            const sectionElement = this.createSectionElement(section);
+            container.appendChild(sectionElement);
+        });
+    }
+
+    createSectionElement(section) {
+        const sectionDiv = document.createElement('div');
+        sectionDiv.className = 'menu-section';
+
+        // Section header
+        const headerDiv = document.createElement('div');
+        headerDiv.className = 'section-header';
+        headerDiv.innerHTML = `${section.emoji || '🍽️'} ${section.name}`;
+        sectionDiv.appendChild(headerDiv);
+
+        // Add dishes
+        section.dishes.forEach((dish, index) => {
+            const dishElement = this.createDishElement(dish, index);
+            sectionDiv.appendChild(dishElement);
+        });
+
+        return sectionDiv;
+    }
+
+    createDishElement(dish, index) {
+        const isLocked = this.shouldLockDish(index);
+        
+        const dishDiv = document.createElement('div');
+        dishDiv.className = `dish-item ${isLocked ? 'dish-locked' : ''}`;
+
+        // Dish header
+        const headerDiv = document.createElement('div');
+        headerDiv.className = 'dish-header';
+        if (!isLocked) {
+            headerDiv.onclick = () => this.toggleExplanation(headerDiv);
+        }
+
+        const dishInfoDiv = document.createElement('div');
+        dishInfoDiv.className = 'dish-info';
+
+        const nameDiv = document.createElement('div');
+        nameDiv.className = 'dish-name';
+        nameDiv.innerHTML = dish.name + (isLocked ? '<span class="lock-badge">🔒 LOCKED</span>' : '');
+
+        const descDiv = document.createElement('div');
+        descDiv.className = 'dish-original-desc';
+        descDiv.textContent = dish.originalDescription || dish.description || '';
+
+        dishInfoDiv.appendChild(nameDiv);
+        dishInfoDiv.appendChild(descDiv);
+
+        const expandIcon = document.createElement('div');
+
+
+
+</body>
+</html>
