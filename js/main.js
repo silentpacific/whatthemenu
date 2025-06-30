@@ -171,97 +171,37 @@ class MenuScanner {
         }
     }
 
-    async callOpenAI(file) {
-        // Convert file to base64
-        const base64 = await this.fileToBase64(file);
+async callOpenAI(file) {
+    // Convert file to base64
+    const base64 = await this.fileToBase64(file);
 
-    console.log('🔍 API Key exists:', !!CONFIG.OPENAI_API_KEY);
-    console.log('🔍 API URL:', CONFIG.OPENAI_API_URL);
-    console.log('🔍 API Key starts with sk-:', CONFIG.OPENAI_API_KEY.startsWith('sk-'));
+    console.log('🔍 Calling Netlify function...');
     
-        
-        try {
-            const response = await fetch(CONFIG.OPENAI_API_URL, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${CONFIG.OPENAI_API_KEY}`
-                },
-                body: JSON.stringify({
-                    model: "gpt-4o",
-                    messages: [
-                        {
-                            role: "user",
-                            content: [
-                                {
-                                    type: "text",
-                                    text: "Analyze this menu image and organize the dishes by sections (like Appetizers, Main Courses, etc.). Return JSON with this exact structure: {\"sections\":[{\"name\":\"Appetizers\",\"emoji\":\"🥗\",\"dishes\":[{\"name\":\"Dish Name\",\"originalDescription\":\"Original text from menu\",\"aiExplanation\":\"User-friendly explanation up to 300 characters\",\"hasWarnings\":false,\"allergens\":[],\"isSpicy\":false}]}]}"
-                                },
-                                {
-                                    type: "image_url",
-                                    image_url: {
-                                        url: `data:image/jpeg;base64,${base64}`
-                                    }
-                                }
-                            ]
-                        }
-                    ],
-                    max_tokens: 1000
-                })
-            });
+    try {
+        const response = await fetch('/.netlify/functions/scan-menu', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                image: base64,
+                targetLanguage: 'en'
+            })
+        });
 
-        console.log('🔍 Response status:', response.status);
-        console.log('🔍 Response headers:', response.headers);
+        console.log('🔍 Netlify function response status:', response.status);
 
-            if (!response.ok) {
-                throw new Error(`OpenAI API error: ${response.status}`);
-            }
-
-const data = await response.json();
-let content = data.choices[0].message.content;
-
-console.log('🔍 Raw OpenAI response:', content);
-
-// Clean up the content if it has markdown formatting
-if (content.includes('```json')) {
-    content = content.replace(/```json\s*/g, '').replace(/```\s*/g, '');
-}
-
-// Try to parse JSON response
-try {
-    const parsedContent = JSON.parse(content);
-    console.log('🔍 Parsed JSON:', parsedContent);
-    
-    return {
-        success: true,
-        data: {
-            dishes: parsedContent.dishes || [],
-            sourceLanguage: parsedContent.sourceLanguage || 'unknown',
-            targetLanguage: 'en'
+        if (!response.ok) {
+            throw new Error(`Netlify function error: ${response.status}`);
         }
-    };
-} catch (e) {
-    console.log('🔍 JSON parse failed, treating as text:', e);
-    // If not JSON, return as plain text
-    return {
-        success: true,
-        data: {
-            translation: content,
-            dishes: [],
-            sourceLanguage: 'unknown',
-            targetLanguage: 'en'
-        }
-    };
-}
 
-        } catch (error) {
-            console.error('OpenAI API error:', error);
-            return {
-                success: false,
-                error: error.message
-            };
-        }
-    }
+        const result = await response.json();
+        console.log('🔍 Netlify function result:', result);
+
+        return result;
+
+    } catch (error) {
+        console
 
     fileToBase64(file) {
         return new Promise((resolve, reject) => {
