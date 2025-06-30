@@ -1,11 +1,4 @@
-// js/config.js - Secure configuration without hardcoded secrets
-
-// Supabase Configuration - Use public anon key only
-const SUPABASE_CONFIG = {
-    // These should be your PUBLIC values - never include service keys in frontend code
-    url: 'https://tibeuchezcksymjivgwr.supabase.co',
-    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRpYmV1Y2hlemNrc3ltaml2Z3dyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTEwMTQyNDAsImV4cCI6MjA2NjU5MDI0MH0.hx8ocUMZQaAvo50L_KtI9FuH4lklAT5N1th-H4njVrw'
-};
+// js/config.js - Clean configuration without any secrets
 
 // API Configuration
 const CONFIG = {
@@ -16,9 +9,6 @@ const CONFIG = {
         SCAN_MENU: '/scan-menu',
         CREATE_PAYMENT: '/create-payment'
     },
-    
-    // Supabase config
-    SUPABASE: SUPABASE_CONFIG,
     
     // File Upload Settings
     FILE_UPLOAD: {
@@ -128,15 +118,6 @@ const CONFIG = {
     }
 };
 
-// Initialize Supabase client
-let supabaseClient = null;
-if (typeof window !== 'undefined' && window.supabase) {
-    supabaseClient = window.supabase.createClient(
-        SUPABASE_CONFIG.url, 
-        SUPABASE_CONFIG.anonKey
-    );
-}
-
 // Utility functions
 CONFIG.getApiUrl = function(endpoint) {
     return this.API_BASE_URL + this.ENDPOINTS[endpoint];
@@ -162,14 +143,9 @@ CONFIG.getLanguageName = function(code) {
     return this.SUPPORTED_LANGUAGES[code] || code;
 };
 
-CONFIG.getSupabaseClient = function() {
-    return supabaseClient;
-};
-
 // Export for use in other files
 if (typeof window !== 'undefined') {
     window.CONFIG = CONFIG;
-    window.supabaseClient = supabaseClient;
 }
 
 // Development logging
