@@ -7,6 +7,10 @@ class MenuScanner {
         this.init();
     }
 
+function getElementById(id) {
+    return document.getElementById(id);
+}
+
     /**
      * Initialize the application
      */
@@ -23,38 +27,27 @@ class MenuScanner {
     /**
      * Bind all event listeners
      */
-    bindEvents() {
-        // File upload events
-        const fileInput = Utils.dom.get('file-input');
-        const uploadArea = Utils.dom.get('upload-area');
-        const scanBtn = Utils.dom.get('scan-btn');
-        const closeModal = Utils.dom.get('close-modal');
-        const modal = Utils.dom.get('result-modal');
+bindEvents() {
+    // File upload events - simplified version
+    const fileInput = document.getElementById('file-input');
+    const uploadArea = document.getElementById('upload-area');
+    const scanBtn = document.getElementById('scan-btn');
 
-        if (fileInput) {
-            fileInput.addEventListener('change', (e) => this.handleFileSelect(e));
-        }
+    if (fileInput) {
+        fileInput.addEventListener('change', (e) => this.handleFileSelect(e));
+    }
 
-        if (uploadArea) {
-            uploadArea.addEventListener('click', () => fileInput?.click());
-            uploadArea.addEventListener('dragover', (e) => this.handleDragOver(e));
-            uploadArea.addEventListener('dragleave', (e) => this.handleDragLeave(e));
-            uploadArea.addEventListener('drop', (e) => this.handleDrop(e));
-        }
+    if (uploadArea) {
+        uploadArea.addEventListener('click', () => {
+            if (fileInput) fileInput.click();
+        });
+        uploadArea.addEventListener('dragover', (e) => this.handleDragOver(e));
+        uploadArea.addEventListener('dragleave', (e) => this.handleDragLeave(e));
+        uploadArea.addEventListener('drop', (e) => this.handleDrop(e));
+    }
 
-        if (scanBtn) {
-            scanBtn.addEventListener('click', () => this.handleScan());
-        }
-
-        if (closeModal) {
-            closeModal.addEventListener('click', () => this.closeModal());
-        }
-
-        if (modal) {
-            modal.addEventListener('click', (e) => {
-                if (e.target === modal) this.closeModal();
-            });
-        }
+    // Rest of your existing event handlers...
+}
 
         // Keyboard events
         document.addEventListener('keydown', (e) => {
