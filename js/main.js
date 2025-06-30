@@ -171,37 +171,43 @@ class MenuScanner {
         }
     }
 
-async callOpenAI(file) {
-    // Convert file to base64
-    const base64 = await this.fileToBase64(file);
+    async callOpenAI(file) {
+        // Convert file to base64
+        const base64 = await this.fileToBase64(file);
 
-    console.log('🔍 Calling Netlify function...');
-    
-    try {
-        const response = await fetch('/.netlify/functions/scan-menu', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                image: base64,
-                targetLanguage: 'en'
-            })
-        });
+        console.log('🔍 Calling Netlify function...');
+        
+        try {
+            const response = await fetch('/.netlify/functions/scan-menu', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    image: base64,
+                    targetLanguage: 'en'
+                })
+            });
 
-        console.log('🔍 Netlify function response status:', response.status);
+            console.log('🔍 Netlify function response status:', response.status);
 
-        if (!response.ok) {
-            throw new Error(`Netlify function error: ${response.status}`);
+            if (!response.ok) {
+                throw new Error(`Netlify function error: ${response.status}`);
+            }
+
+            const result = await response.json();
+            console.log('🔍 Netlify function result:', result);
+
+            return result;
+
+        } catch (error) {
+            console.error('Netlify function error:', error);
+            return {
+                success: false,
+                error: error.message
+            };
         }
-
-        const result = await response.json();
-        console.log('🔍 Netlify function result:', result);
-
-        return result;
-
-    } catch (error)
-        console
+    }
 
     fileToBase64(file) {
         return new Promise((resolve, reject) => {
@@ -238,23 +244,23 @@ async callOpenAI(file) {
         `;
     }
 
-displayResults(data) {
-    // Save results to sessionStorage for the results page
-    const resultsData = {
-        sections: data.sections || [],
-        timestamp: Date.now(),
-        sourceLanguage: data.sourceLanguage || 'unknown',
-        targetLanguage: data.targetLanguage || 'en',
-        // Keep backward compatibility with old format
-        dishes: data.dishes || [],
-        translation: data.translation
-    };
-    
-    sessionStorage.setItem('menuResults', JSON.stringify(resultsData));
-    
-    // Redirect to results page
-    window.location.href = 'results.html';
-}
+    displayResults(data) {
+        // Save results to sessionStorage for the results page
+        const resultsData = {
+            sections: data.sections || [],
+            timestamp: Date.now(),
+            sourceLanguage: data.sourceLanguage || 'unknown',
+            targetLanguage: data.targetLanguage || 'en',
+            // Keep backward compatibility with old format
+            dishes: data.dishes || [],
+            translation: data.translation
+        };
+        
+        sessionStorage.setItem('menuResults', JSON.stringify(resultsData));
+        
+        // Redirect to results page
+        window.location.href = 'results.html';
+    }
 
     displayError(errorMessage) {
         const resultsContainer = document.getElementById('analysis-results');
