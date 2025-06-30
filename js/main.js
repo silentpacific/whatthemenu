@@ -225,57 +225,98 @@ class MenuScanner {
     /**
      * Handle menu scan
      */
-    async handleScan() {
-        if (!this.currentFile || this.isProcessing) return;
+/**
+ * Handle menu scan
+ */
+async handleScan() {
+    if (!this.currentFile || this.isProcessing) return;
 
-        const languageSelect = Utils.dom.get('target-language');
-        const targetLanguage = languageSelect?.value || 'en';
-        const scanBtn = Utils.dom.get('scan-btn');
+    const languageSelect = Utils.dom.get('target-language');
+    const targetLanguage = languageSelect?.value || 'en';
+    const scanBtn = Utils.dom.get('scan-btn');
+    const startTime = Date.now(); // Track timing
 
-        try {
-            this.isProcessing = true;
-            Utils.dom.setLoading(scanBtn, 'Analyzing...');
-            
-            // Show modal with loading state
-            this.showModal();
-            this.showLoadingState();
+    try {
+        this.isProcessing = true;
+        Utils.dom.setLoading(scanBtn, 'Analyzing...');
+        
+        // Show modal with loading state
+        this.showModal();
+        this.showLoadingState();
 
-            // Track analytics
-            Utils.analytics.track('scan_started', {
-                target_language: targetLanguage,
-                file_size: this.currentFile.size,
-                file_type: this.currentFile.type
+        // Track analytics (existing)
+        Utils.analytics.track('scan_started', {
+            target_language: targetLanguage,
+            file_size: this.currentFile.size,
+            file_type: this.currentFile.type
+        });
+
+        // Track GA4 scan attempt (existing)
+        trackScanAttempt(targetLanguage);
+
+        // 🆕 NEW: Track scan started in Supabase
+        await trackScanEvent({
+            status: 'started',
+            targetLanguage: targetLanguage,
+            fileSize: this.currentFile.size
+        });
+
+        // Make API request
+        const result = await Utils.api.scanMenu(this.currentFile, targetLanguage);
+        const processingTime = Date.now() - startTime; // Calculate processing time
+
+        if (result.success) {
+            this.displayResults(result.data);
+            Utils.analytics.trackScan(targetLanguage, true);
+            trackScanResult(true, targetLanguage);
+            Utils.feedback.showSuccess(CONFIG.SUCCESS_MESSAGES.SCAN_COMPLETE);
+
+            // 🆕 NEW: Track successful scan in Supabase
+            await trackScanEvent({
+                status: 'success',
+                targetLanguage: targetLanguage,
+                sourceLanguage: result.data.sourceLanguage,
+                fileSize: this.currentFile.size,
+                processingTime: processingTime,
+                dishesFound: result.data.dishes?.length || 0
             });
 
-            // Track GA4 scan attempt
-            trackScanAttempt(targetLanguage);
-
-            // Make API request
-            const result = await Utils.api.scanMenu(this.currentFile, targetLanguage);
-
-            if (result.success) {
-                this.displayResults(result.data);
-                Utils.analytics.trackScan(targetLanguage, true);
-                trackScanResult(true, targetLanguage);
-                Utils.feedback.showSuccess(CONFIG.SUCCESS_MESSAGES.SCAN_COMPLETE);
-            } else {
-                this.displayError(result.error);
-                Utils.analytics.trackScan(targetLanguage, false);
-                trackScanResult(false, targetLanguage);
-                Utils.analytics.trackError(result.error, 'scan_menu');
-            }
-
-        } catch (error) {
-            console.error('Scan error:', error);
-            this.displayError(error.message || CONFIG.ERROR_MESSAGES.GENERIC_ERROR);
-            Utils.analytics.trackError(error.message, 'scan_exception');
+        } else {
+            this.displayError(result.error);
+            Utils.analytics.trackScan(targetLanguage, false);
             trackScanResult(false, targetLanguage);
-        } finally {
-            this.isProcessing = false;
-            Utils.dom.removeLoading(scanBtn);
-        }
-    }
+            Utils.analytics.trackError(result.error, 'scan_menu');
 
+            // 🆕 NEW: Track failed scan in Supabase
+            await trackScanEvent({
+                status: 'failed',
+                targetLanguage: targetLanguage,
+                fileSize: this.currentFile.size,
+                processingTime: processingTime,
+                error: result.error
+            });
+        }
+
+    } catch (error) {
+        console.error('Scan error:', error);
+        this.displayError(error.message || CONFIG.ERROR_MESSAGES.GENERIC_ERROR);
+        Utils.analytics.trackError(error.message, 'scan_exception');
+        trackScanResult(false, targetLanguage);
+
+        // 🆕 NEW: Track error in Supabase
+        await trackScanEvent({
+            status: 'failed',
+            targetLanguage: targetLanguage,
+            fileSize: this.currentFile.size,
+            processingTime: Date.now() - startTime,
+            error: error.message
+        });
+
+    } finally {
+        this.isProcessing = false;
+        Utils.dom.removeLoading(scanBtn);
+    }
+}
     /**
      * Show modal
      */
@@ -448,6 +489,16 @@ document.addEventListener('DOMContentLoaded', () => {
     window.menuScanner = new MenuScanner();
 });
 
+// Initialize Supabase
+const SUPABASE_URL = 'https://tibeuchezcksymjivgwr.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRpYmV1Y2hlemNrc3ltaml2Z3dyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTEwMTQyNDAsImV4cCI6MjA2NjU5MDI0MH0.hx8ocUMZQaAvo50L_KtI9FuH4lklAT5N1th-H4njVrw';
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// Initialize app when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+
+
+
 // Handle page visibility for analytics
 document.addEventListener('visibilitychange', () => {
     if (!document.hidden) {
@@ -486,11 +537,25 @@ function scrollToUpload() {
 
 async function buyDailyPass() {
     trackPricingClick('daily_pass');
+    
+    // Track in Supabase
+    await trackUserEvent('pricing_click', { 
+        plan_type: 'daily_pass',
+        price: 100 // cents
+    });
+    
     await initiatePurchase('daily_pass', 'Daily Pass - $1 for unlimited scans (24 hours)');
 }
 
 async function buyWeeklyPass() {
     trackPricingClick('weekly_pass');
+    
+    // Track in Supabase
+    await trackUserEvent('pricing_click', { 
+        plan_type: 'weekly_pass',
+        price: 500 // cents
+    });
+    
     await initiatePurchase('weekly_pass', 'Weekly Pass - $5 for unlimited scans (7 days)');
 }
 
@@ -520,5 +585,169 @@ function trackPricingClick(plan) {
             'plan_type': plan,
             'event_category': 'conversion'
         });
+    }
+}
+
+// Add these to your main.js file
+
+// Generate a session ID for tracking
+function getSessionId() {
+    let sessionId = sessionStorage.getItem('session_id');
+    if (!sessionId) {
+        sessionId = 'sess_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        sessionStorage.setItem('session_id', sessionId);
+    }
+    return sessionId;
+}
+
+// Track scan event in Supabase
+async function trackScanEvent(eventData) {
+    try {
+        const { error } = await supabase.from('scan_events').insert({
+            session_id: getSessionId(),
+            source_language: eventData.sourceLanguage || null,
+            target_language: eventData.targetLanguage,
+            scan_status: eventData.status,
+            error_reason: eventData.error || null,
+            file_size_bytes: eventData.fileSize || null,
+            processing_time_ms: eventData.processingTime || null,
+            dishes_found: eventData.dishesFound || 0,
+            user_agent: navigator.userAgent,
+            // You can add IP/location detection here if needed
+        });
+        
+        if (error) {
+            console.error('Error tracking scan event:', error);
+        }
+    } catch (error) {
+        console.error('Error tracking scan event:', error);
+    }
+}
+
+// Track user analytics event
+async function trackUserEvent(eventType, eventData = {}) {
+    try {
+        const { error } = await supabase.from('user_analytics').insert({
+            session_id: getSessionId(),
+            event_type: eventType,
+            event_data: eventData,
+            page_url: window.location.href,
+            referrer: document.referrer || null,
+            device_type: /Mobile|Android|iPhone|iPad/.test(navigator.userAgent) ? 'mobile' : 'desktop',
+        });
+        
+        if (error) {
+            console.error('Error tracking user event:', error);
+        }
+    } catch (error) {
+        console.error('Error tracking user event:', error);
+    }
+}
+
+// Check if user has active subscription
+async function checkActiveSubscription() {
+    try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return null;
+        
+        const { data, error } = await supabase.rpc('get_user_active_subscription', {
+            user_uuid: user.id
+        });
+        
+        if (error) {
+            console.error('Error checking subscription:', error);
+            return null;
+        }
+        
+        return data.length > 0 ? data[0] : null;
+    } catch (error) {
+        console.error('Error checking subscription:', error);
+        return null;
+    }
+}
+
+function trackPricingClick(plan) {
+    if (typeof gtag !== 'undefined') {
+        gtag('event', 'pricing_click', {
+            'plan_type': plan,
+            'event_category': 'conversion'
+        });
+    }
+}
+
+
+// ADD ALL THE HELPER FUNCTIONS HERE:
+// Generate a session ID for tracking
+function getSessionId() {
+    let sessionId = sessionStorage.getItem('session_id');
+    if (!sessionId) {
+        sessionId = 'sess_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        sessionStorage.setItem('session_id', sessionId);
+    }
+    return sessionId;
+}
+
+// Track scan event in Supabase
+async function trackScanEvent(eventData) {
+    try {
+        const { error } = await supabase.from('scan_events').insert({
+            session_id: getSessionId(),
+            source_language: eventData.sourceLanguage || null,
+            target_language: eventData.targetLanguage,
+            scan_status: eventData.status,
+            error_reason: eventData.error || null,
+            file_size_bytes: eventData.fileSize || null,
+            processing_time_ms: eventData.processingTime || null,
+            dishes_found: eventData.dishesFound || 0,
+            user_agent: navigator.userAgent,
+        });
+        
+        if (error) {
+            console.error('Error tracking scan event:', error);
+        }
+    } catch (error) {
+        console.error('Error tracking scan event:', error);
+    }
+}
+
+// Track user analytics event
+async function trackUserEvent(eventType, eventData = {}) {
+    try {
+        const { error } = await supabase.from('user_analytics').insert({
+            session_id: getSessionId(),
+            event_type: eventType,
+            event_data: eventData,
+            page_url: window.location.href,
+            referrer: document.referrer || null,
+            device_type: /Mobile|Android|iPhone|iPad/.test(navigator.userAgent) ? 'mobile' : 'desktop',
+        });
+        
+        if (error) {
+            console.error('Error tracking user event:', error);
+        }
+    } catch (error) {
+        console.error('Error tracking user event:', error);
+    }
+}
+
+// Check if user has active subscription
+async function checkActiveSubscription() {
+    try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return null;
+        
+        const { data, error } = await supabase.rpc('get_user_active_subscription', {
+            user_uuid: user.id
+        });
+        
+        if (error) {
+            console.error('Error checking subscription:', error);
+            return null;
+        }
+        
+        return data.length > 0 ? data[0] : null;
+    } catch (error) {
+        console.error('Error checking subscription:', error);
+        return null;
     }
 }
