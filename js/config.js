@@ -1,4 +1,11 @@
-// js/config.js - Configuration settings and constants
+// js/config.js - Secure configuration without hardcoded secrets
+
+// Supabase Configuration - Use public anon key only
+const SUPABASE_CONFIG = {
+    // These should be your PUBLIC values - never include service keys in frontend code
+    url: 'https://tibeuchezcksymjivgwr.supabase.co',
+    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRpYmV1Y2hlemNrc3ltaml2Z3dyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTEwMTQyNDAsImV4cCI6MjA2NjU5MDI0MH0.hx8ocUMZQaAvo50L_KtI9FuH4lklAT5N1th-H4njVrw'
+};
 
 // API Configuration
 const CONFIG = {
@@ -9,6 +16,9 @@ const CONFIG = {
         SCAN_MENU: '/scan-menu',
         CREATE_PAYMENT: '/create-payment'
     },
+    
+    // Supabase config
+    SUPABASE: SUPABASE_CONFIG,
     
     // File Upload Settings
     FILE_UPLOAD: {
@@ -83,28 +93,6 @@ const CONFIG = {
         MODAL_ANIMATION_DURATION: 300
     },
     
-    // Subscription Tiers
-    SUBSCRIPTION_TIERS: {
-        FREE: {
-            name: 'Casual Diner',
-            monthly_limit: 3,
-            features: ['Basic translations', '10+ languages', 'Mobile app access']
-        },
-        PREMIUM: {
-            name: 'Food Explorer', 
-            monthly_limit: -1, // Unlimited
-            price: 9.99,
-            features: ['Unlimited scans', 'Advanced AI', '50+ languages', 'Dietary info', 'Recommendations', 'Save favorites']
-        },
-        PRO: {
-            name: 'Travel Pro',
-            monthly_limit: -1, // Unlimited
-            price: 99,
-            yearly: true,
-            features: ['Everything in Food Explorer', 'Offline mode', 'Priority support', 'Cuisine insights', 'Travel integration']
-        }
-    },
-    
     // Error Messages
     ERROR_MESSAGES: {
         FILE_TOO_LARGE: 'File size must be less than 10MB',
@@ -140,12 +128,20 @@ const CONFIG = {
     }
 };
 
-// Utility function to get API URL
+// Initialize Supabase client
+let supabaseClient = null;
+if (typeof window !== 'undefined' && window.supabase) {
+    supabaseClient = window.supabase.createClient(
+        SUPABASE_CONFIG.url, 
+        SUPABASE_CONFIG.anonKey
+    );
+}
+
+// Utility functions
 CONFIG.getApiUrl = function(endpoint) {
     return this.API_BASE_URL + this.ENDPOINTS[endpoint];
 };
 
-// Utility function to validate file
 CONFIG.validateFile = function(file) {
     if (!file) {
         return { valid: false, error: this.ERROR_MESSAGES.GENERIC_ERROR };
@@ -162,14 +158,18 @@ CONFIG.validateFile = function(file) {
     return { valid: true };
 };
 
-// Utility function to get language name
 CONFIG.getLanguageName = function(code) {
     return this.SUPPORTED_LANGUAGES[code] || code;
+};
+
+CONFIG.getSupabaseClient = function() {
+    return supabaseClient;
 };
 
 // Export for use in other files
 if (typeof window !== 'undefined') {
     window.CONFIG = CONFIG;
+    window.supabaseClient = supabaseClient;
 }
 
 // Development logging
