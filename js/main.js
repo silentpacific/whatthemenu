@@ -200,7 +200,7 @@ async callOpenAI(file) {
 
         return result;
 
-    } catch (error) {
+    } catch (error)
         console
 
     fileToBase64(file) {
