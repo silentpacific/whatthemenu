@@ -1,6 +1,9 @@
 const fetch = require('node-fetch');
 
 exports.handler = async (event, context) => {
+    // Set function timeout to 25 seconds max
+    context.callbackWaitsForEmptyEventLoop = false;
+    
     console.log('=== scan-menu function started ===');
     
     const headers = {
@@ -12,13 +15,10 @@ exports.handler = async (event, context) => {
 
     // Handle preflight requests
     if (event.httpMethod === 'OPTIONS') {
-        console.log('Handling OPTIONS request');
         return { statusCode: 200, headers };
     }
 
-    // Only allow POST requests
     if (event.httpMethod !== 'POST') {
-        console.log('Invalid method:', event.httpMethod);
         return { 
             statusCode: 405, 
             headers, 
@@ -30,9 +30,7 @@ exports.handler = async (event, context) => {
         console.log('Parsing request body...');
         const { image, targetLanguage = 'en' } = JSON.parse(event.body || '{}');
         
-        // Validate inputs
         if (!image) {
-            console.error('No image provided in request');
             return {
                 statusCode: 400,
                 headers,
@@ -40,9 +38,7 @@ exports.handler = async (event, context) => {
             };
         }
 
-        // Check API key
         if (!process.env.OPENAI_API_KEY) {
-            console.error('OpenAI API key not configured');
             return {
                 statusCode: 500,
                 headers,
@@ -50,195 +46,151 @@ exports.handler = async (event, context) => {
             };
         }
 
-        // Optimize image size before sending
-        const optimizedImage = await optimizeImageSize(image);
+        // Compress image if it's too large
+        const optimizedImage = await compressImage(image);
+        console.log('Optimized image size:', Math.round(optimizedImage.length * 0.75 / 1024), 'KB');
         
         const startTime = Date.now();
         console.log('Starting OpenAI API call...');
         
-        const response = await fetch('https://api.openai.com/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
-            },
-            body: JSON.stringify({
-                model: "gpt-4o-mini",
-                messages: [{
-                    role: "user",
-                    content: [{
-                        type: "text",
-                        text: `Analyze this menu image and organize dishes by sections. Return ONLY valid JSON in this exact format:
-{
-  "sections": [
-    {
-      "name": "Section Name",
-      "emoji": "🍽️",
-      "dishes": [
-        {
-          "name": "Dish Name",
-          "originalDescription": "Original text from menu",
-          "aiExplanation": "Brief explanation in ${targetLanguage}",
-          "hasWarnings": false
-        }
-      ]
-    }
-  ]
-}
-
-Important: Return ONLY the JSON object, no markdown formatting, no additional text.`
-                    }, {
-                        type: "image_url",
-                        image_url: { 
-                            url: `data:image/jpeg;base64,${optimizedImage}`,
-                            detail: "low"
-                        }
-                    }]
-                }],
-                max_tokens: 1500,
-                temperature: 0.1
-            })
-        });
-
-        const duration = Date.now() - startTime;
-        console.log(`OpenAI API call completed in ${duration}ms with status: ${response.status}`);
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error('OpenAI API error:', {
-                status: response.status,
-                statusText: response.statusText,
-                error: errorText
-            });
-            
-            return {
-                statusCode: 500,
-                headers,
-                body: JSON.stringify({ 
-                    success: false, 
-                    error: `OpenAI API error: ${response.status}` 
-                })
-            };
-        }
-
-        console.log('Parsing OpenAI response...');
-        const data = await response.json();
+        // Create abort controller for timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 20000); // 20 second timeout
         
-        if (!data.choices || !data.choices[0] || !data.choices[0].message) {
-            console.error('Invalid OpenAI response structure');
-            return {
-                statusCode: 500,
-                headers,
-                body: JSON.stringify({ success: false, error: 'Invalid OpenAI response' })
-            };
-        }
-
-        let content = data.choices[0].message.content;
-        console.log('Raw OpenAI response preview:', content.substring(0, 200));
-
-        // Clean up the content - remove markdown formatting
-        content = content.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
-        
-        // Try to extract JSON if there's extra text
-        const jsonMatch = content.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-            content = jsonMatch[0];
-        }
-
-        console.log('Cleaned content preview:', content.substring(0, 200));
-
-        // Parse the JSON
-        let parsedContent;
         try {
-            parsedContent = JSON.parse(content);
-        } catch (parseError) {
-            console.error('JSON parsing failed:', parseError);
-            console.error('Content that failed to parse:', content);
+            const response = await fetch('https://api.openai.com/v1/chat/completions', {
+                method: 'POST',
+                signal: controller.signal,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
+                },
+                body: JSON.stringify({
+                    model: "gpt-4o-mini", // Fastest model
+                    messages: [{
+                        role: "user",
+                        content: [{
+                            type: "text",
+                            text: "Extract menu items as JSON: {\"sections\":[{\"name\":\"Section\",\"emoji\":\"🍽️\",\"dishes\":[{\"name\":\"dish\",\"originalDescription\":\"desc\",\"aiExplanation\":\"brief explanation\"}]}]}"
+                        }, {
+                            type: "image_url",
+                            image_url: { 
+                                url: `data:image/jpeg;base64,${optimizedImage}`,
+                                detail: "low" // Use low detail for speed
+                            }
+                        }]
+                    }],
+                    max_tokens: 800, // Reduced for speed
+                    temperature: 0.1
+                })
+            });
+
+            clearTimeout(timeoutId);
             
-            // Return a fallback response
+            const duration = Date.now() - startTime;
+            console.log(`OpenAI responded in ${duration}ms with status: ${response.status}`);
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('OpenAI error:', response.status, errorText);
+                throw new Error(`OpenAI failed: ${response.status}`);
+            }
+
+            const data = await response.json();
+            let content = data.choices[0].message.content;
+            
+            // Clean and parse JSON
+            content = content.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+            
+            // Try to find JSON in the response
+            const jsonMatch = content.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+                content = jsonMatch[0];
+            }
+            
+            let parsedContent;
+            try {
+                parsedContent = JSON.parse(content);
+            } catch (parseError) {
+                console.error('JSON parse failed:', parseError);
+                // Return fallback data
+                parsedContent = {
+                    sections: [{
+                        name: "Menu Items",
+                        emoji: "🍽️",
+                        dishes: [{
+                            name: "Menu detected",
+                            originalDescription: "Could not parse specific items",
+                            aiExplanation: "Try a clearer image for better results"
+                        }]
+                    }]
+                };
+            }
+
+            // Ensure valid structure
+            if (!parsedContent.sections || !Array.isArray(parsedContent.sections)) {
+                parsedContent = {
+                    sections: [{
+                        name: "Menu Items", 
+                        emoji: "🍽️",
+                        dishes: [{
+                            name: "Invalid format",
+                            originalDescription: "Menu structure not recognized",
+                            aiExplanation: "Please try a different image"
+                        }]
+                    }]
+                };
+            }
+            
+            console.log(`Total time: ${Date.now() - startTime}ms`);
+            
             return {
                 statusCode: 200,
                 headers,
-                body: JSON.stringify({
-                    success: true,
-                    data: {
-                        sections: [{
-                            name: "Menu Items",
-                            emoji: "🍽️",
-                            dishes: [{
-                                name: "Unable to parse menu",
-                                originalDescription: "The AI could not parse this menu properly",
-                                aiExplanation: "Please try a clearer image or different angle",
-                                hasWarnings: true
-                            }]
-                        }]
-                    }
-                })
+                body: JSON.stringify({ success: true, data: parsedContent })
             };
-        }
 
-        // Validate the parsed content structure
-        if (!parsedContent.sections || !Array.isArray(parsedContent.sections)) {
-            console.error('Invalid sections structure in parsed content');
-            parsedContent = {
-                sections: [{
-                    name: "Menu Items",
-                    emoji: "🍽️",
-                    dishes: [{
-                        name: "Parsing Error",
-                        originalDescription: "Could not organize menu properly",
-                        aiExplanation: "The menu structure was not recognized correctly",
-                        hasWarnings: true
-                    }]
-                }]
-            };
+        } catch (fetchError) {
+            clearTimeout(timeoutId);
+            if (fetchError.name === 'AbortError') {
+                console.error('OpenAI request timed out');
+                throw new Error('Request timed out - please try again');
+            }
+            throw fetchError;
         }
-        
-        console.log(`Total processing time: ${Date.now() - startTime}ms`);
-        console.log('Successfully processed menu with', parsedContent.sections.length, 'sections');
-        
-        return {
-            statusCode: 200,
-            headers,
-            body: JSON.stringify({ success: true, data: parsedContent })
-        };
 
     } catch (error) {
-        console.error('Function error details:', {
-            message: error.message,
-            stack: error.stack,
-            name: error.name
-        });
+        console.error('Function error:', error.message);
         
         return {
             statusCode: 500,
             headers,
             body: JSON.stringify({ 
                 success: false, 
-                error: `Processing failed: ${error.message}` 
+                error: error.message || 'Processing failed'
             })
         };
     }
 };
 
-// Optimize image size for faster processing
-async function optimizeImageSize(base64Image) {
+// Compress large images
+async function compressImage(base64Image) {
     try {
         const imageBuffer = Buffer.from(base64Image, 'base64');
-        const imageSizeKB = Math.round(imageBuffer.length / 1024);
+        const sizeKB = Math.round(imageBuffer.length / 1024);
         
-        console.log(`Image size: ${imageSizeKB}KB`);
+        console.log(`Original image: ${sizeKB}KB`);
         
-        // If image is larger than 1MB, log it but still process
-        if (imageBuffer.length > 1024 * 1024) {
-            console.log('Large image detected (>1MB), processing with low detail');
+        // If image is larger than 500KB, we might need compression
+        // For now, just return original but log the size
+        if (sizeKB > 500) {
+            console.log('Large image detected - processing with low detail');
         }
         
-        // For now, return as-is but we could add actual compression here
         return base64Image;
         
     } catch (error) {
-        console.warn('Image optimization failed, using original:', error.message);
+        console.warn('Image compression failed:', error.message);
         return base64Image;
     }
 }
