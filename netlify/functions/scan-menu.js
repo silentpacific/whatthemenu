@@ -1,7 +1,7 @@
 const fetch = require('node-fetch');
 
 exports.handler = async (event, context) => {
-    console.log('scan-menu function started');
+    console.log('=== scan-menu function started ===');
     
     const headers = {
         'Access-Control-Allow-Origin': '*',
@@ -11,10 +11,12 @@ exports.handler = async (event, context) => {
     };
 
     if (event.httpMethod === 'OPTIONS') {
+        console.log('OPTIONS request handled');
         return { statusCode: 200, headers };
     }
 
     if (event.httpMethod !== 'POST') {
+        console.log('Invalid method:', event.httpMethod);
         return { 
             statusCode: 405, 
             headers, 
@@ -23,7 +25,7 @@ exports.handler = async (event, context) => {
     }
 
     try {
-        console.log('Parsing request...');
+        console.log('=== Parsing request ===');
         
         let requestBody;
         try {
@@ -40,6 +42,7 @@ exports.handler = async (event, context) => {
         const { image, targetLanguage = 'en' } = requestBody;
         
         if (!image) {
+            console.error('No image provided');
             return {
                 statusCode: 400,
                 headers,
@@ -47,6 +50,7 @@ exports.handler = async (event, context) => {
             };
         }
 
+        console.log('=== Checking OpenAI API key ===');
         if (!process.env.OPENAI_API_KEY) {
             console.error('Missing OpenAI API key');
             return {
@@ -55,9 +59,11 @@ exports.handler = async (event, context) => {
                 body: JSON.stringify({ success: false, error: 'API key not configured' })
             };
         }
+        
+        console.log('OpenAI API key found:', process.env.OPENAI_API_KEY.substring(0, 10) + '...');
 
         console.log('Image size:', Math.round(image.length * 0.75 / 1024), 'KB');
-        console.log('Calling OpenAI...');
+        console.log('=== Calling OpenAI API ===');
         
         const startTime = Date.now();
         
@@ -87,45 +93,69 @@ exports.handler = async (event, context) => {
                         ]
                     }
                 ],
-                max_tokens: 500,
+                max_tokens: 800,
                 temperature: 0.1
             })
         });
 
         const duration = Date.now() - startTime;
-        console.log(`OpenAI responded in ${duration}ms with status:`, openAIResponse.status);
+        console.log(`=== OpenAI API Response ===`);
+        console.log(`Response time: ${duration}ms`);
+        console.log(`Status: ${openAIResponse.status}`);
+        console.log(`Status Text: ${openAIResponse.statusText}`);
 
         if (!openAIResponse.ok) {
             const errorText = await openAIResponse.text();
-            console.error('OpenAI error:', openAIResponse.status, errorText);
+            console.error('=== OpenAI API Error ===');
+            console.error('Status:', openAIResponse.status);
+            console.error('Error:', errorText);
             return {
                 statusCode: 500,
                 headers,
-                body: JSON.stringify({ success: false, error: `OpenAI error: ${openAIResponse.status}` })
+                body: JSON.stringify({ success: false, error: `OpenAI error: ${openAIResponse.status} - ${errorText}` })
             };
         }
 
+        console.log('=== Processing OpenAI Response ===');
         const openAIData = await openAIResponse.json();
-        let content = openAIData.choices[0].message.content;
         
-        console.log('Raw response:', content.substring(0, 100));
+        if (!openAIData.choices || !openAIData.choices[0] || !openAIData.choices[0].message) {
+            console.error('Invalid OpenAI response structure:', JSON.stringify(openAIData, null, 2));
+            return {
+                statusCode: 500,
+                headers,
+                body: JSON.stringify({ success: false, error: 'Invalid OpenAI response structure' })
+            };
+        }
+        
+        let content = openAIData.choices[0].message.content;
+        console.log('=== Raw OpenAI Content ===');
+        console.log('Full content:', content);
         
         // Clean JSON
         content = content.replace(/```json/g, '').replace(/```/g, '').trim();
+        console.log('=== Cleaned Content ===');
+        console.log('Cleaned:', content);
         
         let parsedContent;
         try {
             parsedContent = JSON.parse(content);
+            console.log('=== Successfully Parsed JSON ===');
+            console.log('Parsed structure:', JSON.stringify(parsedContent, null, 2));
         } catch (jsonError) {
-            console.error('JSON parse failed:', jsonError);
+            console.error('=== JSON Parse Failed ===');
+            console.error('Parse error:', jsonError.message);
+            console.error('Content that failed:', content);
+            
+            // Return fallback
             parsedContent = {
                 sections: [{
                     name: "Menu Items",
                     emoji: "🍽️",
                     dishes: [{
-                        name: "Could not parse menu",
-                        originalDescription: "Processing error occurred",
-                        aiExplanation: "Please try a different image"
+                        name: "JSON Parse Error",
+                        originalDescription: "Could not parse OpenAI response",
+                        aiExplanation: `Parse error: ${jsonError.message}`
                     }]
                 }]
             };
@@ -133,20 +163,23 @@ exports.handler = async (event, context) => {
 
         // Validate structure
         if (!parsedContent.sections || !Array.isArray(parsedContent.sections)) {
+            console.error('=== Invalid Structure ===');
+            console.error('Missing or invalid sections:', parsedContent);
+            
             parsedContent = {
                 sections: [{
                     name: "Menu Items",
                     emoji: "🍽️", 
                     dishes: [{
-                        name: "Invalid response",
-                        originalDescription: "Could not understand menu format",
-                        aiExplanation: "Try a clearer photo"
+                        name: "Structure Error",
+                        originalDescription: "Response structure was invalid",
+                        aiExplanation: "OpenAI returned unexpected format"
                     }]
                 }]
             };
         }
 
-        console.log(`Success! Total time: ${Date.now() - startTime}ms`);
+        console.log(`=== Success! Total time: ${Date.now() - startTime}ms ===`);
         
         return {
             statusCode: 200,
@@ -155,7 +188,10 @@ exports.handler = async (event, context) => {
         };
 
     } catch (error) {
-        console.error('Function error:', error.name, error.message);
+        console.error('=== Function Error ===');
+        console.error('Error name:', error.name);
+        console.error('Error message:', error.message);
+        console.error('Error stack:', error.stack);
         
         return {
             statusCode: 500,
