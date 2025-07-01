@@ -1,71 +1,36 @@
-// netlify/functions/create-payment.js - Payment processing serverless function
+// netlify/functions/create-payment.js - Updated for your existing schema
 
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const { createClient } = require('@supabase/supabase-js');
 
-// One-time pass purchases (not subscriptions)
+const supabase = createClient(
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY
+);
+
+// Pass plans matching your user_subscriptions table
 const PASS_PLANS = {
     'daily_pass': {
         name: 'Daily Pass',
         amount: 100, // $1.00 in cents
         currency: 'usd',
-        type: 'one_time',
-        access_duration: 24, // hours
+        duration_hours: 24,
         description: '24-hour unlimited menu scanning access'
     },
     'weekly_pass': {
         name: 'Weekly Pass', 
         amount: 500, // $5.00 in cents
         currency: 'usd',
-        type: 'one_time',
-        access_duration: 168, // hours (7 days)
+        duration_hours: 168, // 7 days
         description: '7-day unlimited menu scanning access'
     }
 };
 
-
 /**
- * Validate environment variables
- */
-function validateEnvironment() {
-    if (!process.env.STRIPE_SECRET_KEY) {
-        throw new Error('Missing STRIPE_SECRET_KEY environment variable');
-    }
-    if (!process.env.STRIPE_PUBLISHABLE_KEY) {
-        throw new Error('Missing STRIPE_PUBLISHABLE_KEY environment variable');
-    }
-}
-
-/**
- * Validate request data
- */
-function validateRequest(data) {
-    const { planId, email } = data;
-
-    if (!planId || !PASS_PLANS[planId]) {
-        throw new Error('Invalid pass type');
-    }
-
-    if (!email || !isValidEmail(email)) {
-        throw new Error('Valid email address is required');
-    }
-
-    return true;
-}
-
-/**
- * Validate email format
- */
-function isValidEmail(email) {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-}
-
-/**
- * Create or retrieve customer
+ * Get or create Stripe customer
  */
 async function getOrCreateCustomer(email, name = null) {
     try {
-        // Check if customer already exists
         const existingCustomers = await stripe.customers.list({
             email: email,
             limit: 1
@@ -75,7 +40,6 @@ async function getOrCreateCustomer(email, name = null) {
             return existingCustomers.data[0];
         }
 
-        // Create new customer
         const customer = await stripe.customers.create({
             email: email,
             name: name,
@@ -93,10 +57,10 @@ async function getOrCreateCustomer(email, name = null) {
 }
 
 /**
- * Create payment intent for subscription
+ * Create payment intent
  */
 async function createPaymentIntent(customer, planId, metadata = {}) {
-    const plan = PASS_PLANS[planId]; // Changed from SUBSCRIPTION_PLANS
+    const plan = PASS_PLANS[planId];
     
     try {
         const paymentIntent = await stripe.paymentIntents.create({
@@ -109,10 +73,8 @@ async function createPaymentIntent(customer, planId, metadata = {}) {
             metadata: {
                 plan_id: planId,
                 plan_name: plan.name,
-                access_type: 'temporary_access',
-                access_duration_hours: plan.access_duration,
+                duration_hours: plan.duration_hours,
                 customer_email: customer.email,
-                purchase_type: 'one_time_pass',
                 ...metadata
             },
             description: `${plan.name} - ${plan.description}`
@@ -126,46 +88,79 @@ async function createPaymentIntent(customer, planId, metadata = {}) {
 }
 
 /**
- * Create subscription (for future use when payment is confirmed)
+ * Handle successful payment webhook (create this as a separate function)
  */
-async function createSubscription(customerId, planId) {
-    const plan = SUBSCRIPTION_PLANS[planId];
-    
+async function handleSuccessfulPayment(paymentIntentId) {
     try {
-        // In a real implementation, you'd create a Stripe subscription
-        // For now, we'll just create a payment intent
-        console.log(`Would create subscription for customer ${customerId} with plan ${planId}`);
+        // Get payment intent from Stripe
+        const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
         
-        return {
-            id: `sub_${Date.now()}`,
-            status: 'active',
-            plan: plan.name,
-            interval: plan.interval
-        };
-    } catch (error) {
-        console.error('Error creating subscription:', error);
-        throw new Error('Failed to create subscription');
-    }
-}
+        if (paymentIntent.status !== 'succeeded') {
+            return;
+        }
 
-/**
- * Log transaction for analytics
- */
-function logTransaction(data) {
-    console.log('Payment transaction:', {
-        timestamp: new Date().toISOString(),
-        plan_id: data.planId,
-        customer_email: data.email,
-        amount: SUBSCRIPTION_PLANS[data.planId]?.amount,
-        currency: SUBSCRIPTION_PLANS[data.planId]?.currency
-    });
+        const planId = paymentIntent.metadata.plan_id;
+        const plan = PASS_PLANS[planId];
+        const customerEmail = paymentIntent.metadata.customer_email;
+
+        // Find user by email
+        const { data: user, error: userError } = await supabase
+            .from('users')
+            .select('id')
+            .eq('email', customerEmail)
+            .single();
+
+        if (userError || !user) {
+            console.error('User not found for payment:', customerEmail);
+            return;
+        }
+
+        const startTime = new Date();
+        const endTime = new Date(startTime.getTime() + plan.duration_hours * 60 * 60 * 1000);
+
+        // Create subscription record
+        const { error: subError } = await supabase
+            .from('user_subscriptions')
+            .insert([{
+                user_id: user.id,
+                subscription_type: planId,
+                status: 'active',
+                price_cents: plan.amount,
+                currency: plan.currency,
+                starts_at: startTime.toISOString(),
+                expires_at: endTime.toISOString(),
+                stripe_payment_intent_id: paymentIntentId
+            }]);
+
+        if (subError) {
+            console.error('Subscription creation error:', subError);
+            return;
+        }
+
+        // Create transaction record
+        await supabase
+            .from('transactions')
+            .insert([{
+                user_id: user.id,
+                stripe_payment_intent_id: paymentIntentId,
+                amount: plan.amount / 100, // Convert to dollars
+                currency: plan.currency,
+                transaction_type: planId,
+                status: 'completed',
+                description: plan.description
+            }]);
+
+        console.log(`✅ Successfully processed payment for user ${user.id}, plan ${planId}`);
+        
+    } catch (error) {
+        console.error('Payment processing error:', error);
+    }
 }
 
 /**
  * Main function handler
  */
 exports.handler = async (event, context) => {
-    // Set CORS headers
     const headers = {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Headers': 'Content-Type',
@@ -173,16 +168,10 @@ exports.handler = async (event, context) => {
         'Content-Type': 'application/json'
     };
 
-    // Handle preflight requests
     if (event.httpMethod === 'OPTIONS') {
-        return {
-            statusCode: 200,
-            headers,
-            body: ''
-        };
+        return { statusCode: 200, headers };
     }
 
-    // Only allow POST requests
     if (event.httpMethod !== 'POST') {
         return {
             statusCode: 405,
@@ -192,25 +181,24 @@ exports.handler = async (event, context) => {
     }
 
     try {
-        // Validate environment
-        validateEnvironment();
+        const { planId, email, name, metadata = {} } = JSON.parse(event.body);
 
-        // Parse request body
-        let requestBody;
-        try {
-            requestBody = JSON.parse(event.body);
-        } catch (error) {
+        // Validate inputs
+        if (!planId || !PASS_PLANS[planId]) {
             return {
                 statusCode: 400,
                 headers,
-                body: JSON.stringify({ error: 'Invalid JSON in request body' })
+                body: JSON.stringify({ error: 'Invalid plan type' })
             };
         }
 
-        const { planId, email, name, metadata = {} } = requestBody;
-
-        // Validate request data
-        validateRequest({ planId, email });
+        if (!email || !email.includes('@')) {
+            return {
+                statusCode: 400,
+                headers,
+                body: JSON.stringify({ error: 'Valid email address is required' })
+            };
+        }
 
         console.log(`Processing payment for plan: ${planId}, email: ${email}`);
 
@@ -220,15 +208,11 @@ exports.handler = async (event, context) => {
         // Create payment intent
         const paymentIntent = await createPaymentIntent(customer, planId, metadata);
 
-        // Log transaction
-        logTransaction({ planId, email });
-
-        // Return success response
         const response = {
             clientSecret: paymentIntent.client_secret,
             paymentIntentId: paymentIntent.id,
             customerId: customer.id,
-            plan: SUBSCRIPTION_PLANS[planId],
+            plan: PASS_PLANS[planId],
             publishableKey: process.env.STRIPE_PUBLISHABLE_KEY
         };
 
@@ -243,18 +227,13 @@ exports.handler = async (event, context) => {
     } catch (error) {
         console.error('Payment creation error:', error);
 
-        // Return appropriate error response
         let errorMessage = 'Failed to create payment';
         let statusCode = 500;
 
-        if (error.message.includes('Invalid subscription plan') || 
+        if (error.message.includes('Invalid plan') || 
             error.message.includes('Valid email address is required')) {
             errorMessage = error.message;
             statusCode = 400;
-        } else if (error.message.includes('insufficient_quota') || 
-                   error.message.includes('rate_limit')) {
-            errorMessage = 'Service temporarily unavailable. Please try again later.';
-            statusCode = 503;
         }
 
         return {

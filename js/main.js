@@ -1,4 +1,4 @@
-// js/main.js - Clean working version
+// js/main.js - Updated with better error handling and debugging
 
 class MenuScanner {
     constructor() {
@@ -136,7 +136,7 @@ class MenuScanner {
 
         if (this.isProcessing) return;
 
-        console.log('Starting scan...');
+        console.log('🔍 Starting scan process...');
         this.isProcessing = true;
         
         const scanBtn = document.getElementById('scan-btn');
@@ -150,18 +150,22 @@ class MenuScanner {
             this.showModal();
             this.showLoadingState();
 
-            // Call OpenAI API
-            const result = await this.callOpenAI(this.currentFile);
+            // Call Netlify function
+            const result = await this.callNetlifyFunction(this.currentFile);
             
+            console.log('🔍 Scan result:', result);
+
             if (result.success) {
+                console.log('✅ Scan successful, redirecting to results...');
                 this.displayResults(result.data);
             } else {
-                this.displayError(result.error);
+                console.error('❌ Scan failed:', result.error);
+                this.displayError(result.error || 'Analysis failed. Please try again.');
             }
 
         } catch (error) {
-            console.error('Scan error:', error);
-            this.displayError('Something went wrong. Please try again.');
+            console.error('❌ Scan error:', error);
+            this.displayError('Network error. Please check your connection and try again.');
         } finally {
             this.isProcessing = false;
             if (scanBtn) {
@@ -171,11 +175,11 @@ class MenuScanner {
         }
     }
 
-    async callOpenAI(file) {
+    async callNetlifyFunction(file) {
         // Convert file to base64
         const base64 = await this.fileToBase64(file);
 
-        console.log('🔍 Calling Netlify function...');
+        console.log('🔍 Calling Netlify function with file:', file.name);
         
         try {
             const response = await fetch('/.netlify/functions/scan-menu', {
@@ -185,26 +189,32 @@ class MenuScanner {
                 },
                 body: JSON.stringify({
                     image: base64,
-                    targetLanguage: 'en'
+                    targetLanguage: 'en',
+                    userId: null,
+                    sessionId: this.generateSessionId(),
+                    userFingerprint: this.generateFingerprint()
                 })
             });
 
-            console.log('🔍 Netlify function response status:', response.status);
+            console.log('🔍 Response status:', response.status);
+            console.log('🔍 Response headers:', Object.fromEntries(response.headers.entries()));
 
             if (!response.ok) {
-                throw new Error(`Netlify function error: ${response.status}`);
+                const errorText = await response.text();
+                console.error('❌ Function error response:', errorText);
+                throw new Error(`Server error: ${response.status} - ${errorText}`);
             }
 
             const result = await response.json();
-            console.log('🔍 Netlify function result:', result);
+            console.log('🔍 Function result:', result);
 
             return result;
 
         } catch (error) {
-            console.error('Netlify function error:', error);
+            console.error('❌ Network/Function error:', error);
             return {
                 success: false,
-                error: error.message
+                error: error.message || 'Failed to connect to server'
             };
         }
     }
@@ -219,6 +229,14 @@ class MenuScanner {
             };
             reader.onerror = error => reject(error);
         });
+    }
+
+    generateSessionId() {
+        return 'sess_' + Math.random().toString(36).substr(2, 16) + Date.now().toString(36);
+    }
+
+    generateFingerprint() {
+        return 'fp_' + Math.random().toString(36).substr(2, 12);
     }
 
     showModal() {
@@ -245,21 +263,28 @@ class MenuScanner {
     }
 
     displayResults(data) {
+        console.log('📊 Displaying results:', data);
+        
         // Save results to sessionStorage for the results page
         const resultsData = {
             sections: data.sections || [],
             timestamp: Date.now(),
             sourceLanguage: data.sourceLanguage || 'unknown',
             targetLanguage: data.targetLanguage || 'en',
-            // Keep backward compatibility with old format
-            dishes: data.dishes || [],
-            translation: data.translation
+            confidence: data.confidence || 0.9,
+            warnings: data.warnings || [],
+            dishesFound: data.dishesFound || 0,
+            processingTime: data.processingTime || 0
         };
         
+        console.log('💾 Saving to sessionStorage:', resultsData);
         sessionStorage.setItem('menuResults', JSON.stringify(resultsData));
         
-        // Redirect to results page
-        window.location.href = 'results.html';
+        // Small delay to ensure data is saved
+        setTimeout(() => {
+            console.log('🔄 Redirecting to results page...');
+            window.location.href = 'results.html';
+        }, 100);
     }
 
     displayError(errorMessage) {
