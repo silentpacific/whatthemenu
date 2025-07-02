@@ -1,4 +1,4 @@
-// js/main.js - Updated with better error handling and debugging
+// js/main.js - Cleaned up version
 
 class MenuScanner {
     constructor() {
@@ -128,6 +128,12 @@ class MenuScanner {
         }
     }
 
+    formatFileSize(bytes) {
+        if (bytes < 1024) return `${bytes} B`;
+        if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+        return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+    }
+
     async handleScan() {
         if (!this.currentFile) {
             alert('Please select an image first');
@@ -147,8 +153,8 @@ class MenuScanner {
 
         try {
             // Show modal
-            this.showModal();
-            this.showLoadingState();
+            this.showModal && this.showModal();
+            this.showLoadingState && this.showLoadingState();
 
             // Call Netlify function
             const result = await this.callNetlifyFunction(this.currentFile);
@@ -157,18 +163,18 @@ class MenuScanner {
 
             if (result.success) {
                 console.log('✅ Scan successful, redirecting to results...');
-                this.displayResults(result.data);
-                sessionStorage.setItem('menuResults', JSON.stringify(resultsData));
-                sessionStorage.setItem('userId', data.userId || '');
-                sessionStorage.setItem('scanId', data.scanId || '');
+                this.displayResults && this.displayResults(result.data);
+                sessionStorage.setItem('menuResults', JSON.stringify(result.data));
+                sessionStorage.setItem('userId', result.data.userId || '');
+                sessionStorage.setItem('scanId', result.data.scanId || '');
             } else {
                 console.error('❌ Scan failed:', result.error);
-                this.displayError(result.error || 'Analysis failed. Please try again.');
+                this.displayError && this.displayError(result.error || 'Analysis failed. Please try again.');
             }
 
         } catch (error) {
             console.error('❌ Scan error:', error);
-            this.displayError('Network error. Please check your connection and try again.');
+            this.displayError && this.displayError('Network error. Please check your connection and try again.');
         } finally {
             this.isProcessing = false;
             if (scanBtn) {
@@ -230,6 +236,23 @@ class MenuScanner {
             };
         }
     }
+
+    async fileToBase64(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result.split(',')[1]);
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
+    }
+
+    // Placeholder methods for modal and results (implement as needed)
+    showModal() {}
+    showLoadingState() {}
+    displayResults(data) {}
+    displayError(msg) { alert(msg); }
+    closeModal() {}
+}
 
 // Initialize when page loads
 document.addEventListener('DOMContentLoaded', () => {
