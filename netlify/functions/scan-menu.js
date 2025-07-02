@@ -121,7 +121,7 @@ exports.handler = async (event, context) => {
                 {
                     role: "user",
                     content: [
-                        { type: "text", text: `Extract all menu sections, dish names, prices, and descriptions from this menu image. Return as a JSON array of sections, each with a name and an array of dishes (each dish has name, price, description). Example format: [{"section":"Starters","dishes":[{"name":"Garlic Bread","price":"$5.9","description":"2 slices of sourdough bread, confit garlic, fresh herbs"}]}]` },
+                        { type: "text", text: `Extract all menu sections, dish names, and their brief descriptions from this menu image. Return as a JSON array of sections, each with a name and an array of dishes. For each dish, include the name and the exact description text that appears on the menu (if any). Example format: [{"section":"Starters","dishes":[{"name":"Garlic Bread","menu_description":"2 slices of sourdough bread, confit garlic, fresh herbs"},{"name":"Caesar Salad","menu_description":"Crisp romaine, parmesan, croutons"}]}]` },
                         { type: "image_url", image_url: { "url": `data:image/png;base64,${base64Image}` } }
                     ]
                 }
