@@ -1,5 +1,6 @@
 const OpenAI = require('openai');
 const { createClient } = require('@supabase/supabase-js');
+const sharp = require('sharp');
 
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
@@ -46,6 +47,7 @@ async function getSessionScanCount(sessionId) {
 
 exports.handler = async (event, context) => {
     const startTime = Date.now();
+    console.log('Function started');
     const headers = {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Headers': 'Content-Type, Authorization',
@@ -111,6 +113,14 @@ exports.handler = async (event, context) => {
 
         // 2. Use OpenAI Vision to extract and parse menu
         const base64Image = image.startsWith('data:') ? image.split(',')[1] : image;
+        // Resize image to max 1024px width, JPEG 70% quality
+        const resizedBuffer = await sharp(Buffer.from(base64Image, 'base64'))
+            .resize(1024, null, { withoutEnlargement: true })
+            .jpeg({ quality: 70 })
+            .toBuffer();
+        const resizedBase64 = resizedBuffer.toString('base64');
+        // Before OpenAI call
+        console.log('About to call OpenAI:', Date.now() - startTime, 'ms');
         const visionResponse = await openai.chat.completions.create({
             model: "gpt-4o",
             messages: [
@@ -121,14 +131,15 @@ exports.handler = async (event, context) => {
                 {
                     role: "user",
                     content: [
-                        { type: "text", text: `Extract all menu sections and dish names from this menu image. Return as a JSON array of sections, each with a name and an array of dishes (each dish has only a name). Example format: [{"section":"Starters","dishes":[{"name":"Garlic Bread"},{"name":"Bruschetta"}]}]` },
-                        { type: "image_url", image_url: { "url": `data:image/jpeg;base64,${base64Image}`, detail: "low" } }
+                        { type: "text", text: `Extract all menu sections and dish names from this menu image. Return as a JSON array of sections, each with a name and an array of dishes (each dish has only a name). Example format: [{\"section\":\"Starters\",\"dishes\":[{\"name\":\"Garlic Bread\"},{\"name\":\"Bruschetta\"}]}]` },
+                        { type: "image_url", image_url: { "url": `data:image/jpeg;base64,${resizedBase64}`, detail: "low" } }
                     ]
                 }
             ],
             max_tokens: 2000,
             temperature: 0.2
         });
+        console.log('OpenAI response received:', Date.now() - startTime, 'ms');
 
         const responseText = visionResponse.choices[0]?.message?.content?.trim();
         console.log("OpenAI raw response:", responseText);
