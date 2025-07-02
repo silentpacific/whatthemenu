@@ -158,6 +158,9 @@ class MenuScanner {
             if (result.success) {
                 console.log('✅ Scan successful, redirecting to results...');
                 this.displayResults(result.data);
+                sessionStorage.setItem('menuResults', JSON.stringify(resultsData));
+                sessionStorage.setItem('userId', data.userId || '');
+                sessionStorage.setItem('scanId', data.scanId || '');
             } else {
                 console.error('❌ Scan failed:', result.error);
                 this.displayError(result.error || 'Analysis failed. Please try again.');
@@ -176,148 +179,57 @@ class MenuScanner {
     }
 
     async callNetlifyFunction(file) {
-        // Convert file to base64
         const base64 = await this.fileToBase64(file);
-
-        console.log('🔍 Calling Netlify function with file:', file.name);
-        
+    
+        // Get userId from Supabase Auth (if available)
+        let userId = null;
+        if (window.supabase) {
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                userId = user?.id || null;
+            } catch (e) {
+                userId = null;
+            }
+        }
+    
+        // Always use a sessionId for anonymous users
+        let sessionId = sessionStorage.getItem('sessionId');
+        if (!sessionId) {
+            sessionId = 'sess_' + Math.random().toString(36).substr(2, 16) + Date.now().toString(36);
+            sessionStorage.setItem('sessionId', sessionId);
+        }
+    
         try {
             const response = await fetch('/.netlify/functions/scan-menu', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     image: base64,
-                    targetLanguage: 'en',
-                    userId: null,
-                    sessionId: this.generateSessionId(),
-                    userFingerprint: this.generateFingerprint()
+                    userId: userId,      // may be null
+                    sessionId: sessionId // always present
                 })
             });
-
-            console.log('🔍 Response status:', response.status);
-            console.log('🔍 Response headers:', Object.fromEntries(response.headers.entries()));
-
+    
             if (!response.ok) {
                 const errorText = await response.text();
-                console.error('❌ Function error response:', errorText);
                 throw new Error(`Server error: ${response.status} - ${errorText}`);
             }
-
+    
             const result = await response.json();
-            console.log('🔍 Function result:', result);
-
+            // Save userId and scanId for results page
+            if (result.success && result.data) {
+                sessionStorage.setItem('userId', result.data.userId || '');
+                sessionStorage.setItem('scanId', result.data.scanId || '');
+            }
             return result;
-
+    
         } catch (error) {
-            console.error('❌ Network/Function error:', error);
             return {
                 success: false,
                 error: error.message || 'Failed to connect to server'
             };
         }
     }
-
-    fileToBase64(file) {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = () => {
-                const base64 = reader.result.split(',')[1];
-                resolve(base64);
-            };
-            reader.onerror = error => reject(error);
-        });
-    }
-
-    generateSessionId() {
-        return 'sess_' + Math.random().toString(36).substr(2, 16) + Date.now().toString(36);
-    }
-
-    generateFingerprint() {
-        return 'fp_' + Math.random().toString(36).substr(2, 12);
-    }
-
-    showModal() {
-        const modal = document.getElementById('result-modal');
-        if (modal) {
-            modal.style.display = 'flex';
-            document.body.style.overflow = 'hidden';
-        }
-    }
-
-    showLoadingState() {
-        const resultsContainer = document.getElementById('analysis-results');
-        if (!resultsContainer) return;
-
-        resultsContainer.innerHTML = `
-            <div class="loading-spinner">
-                <div class="spinner"></div>
-                <div class="loading-text">Analyzing your menu...</div>
-                <p style="margin-top: 0.5rem; font-size: 0.9rem; color: #64748b;">
-                    This usually takes 10-30 seconds
-                </p>
-            </div>
-        `;
-    }
-
-    displayResults(data) {
-        console.log('📊 Displaying results:', data);
-        
-        // Save results to sessionStorage for the results page
-        const resultsData = {
-            sections: data.sections || [],
-            timestamp: Date.now(),
-            sourceLanguage: data.sourceLanguage || 'unknown',
-            targetLanguage: data.targetLanguage || 'en',
-            confidence: data.confidence || 0.9,
-            warnings: data.warnings || [],
-            dishesFound: data.dishesFound || 0,
-            processingTime: data.processingTime || 0
-        };
-        
-        console.log('💾 Saving to sessionStorage:', resultsData);
-        sessionStorage.setItem('menuResults', JSON.stringify(resultsData));
-        
-        // Small delay to ensure data is saved
-        setTimeout(() => {
-            console.log('🔄 Redirecting to results page...');
-            window.location.href = 'results.html';
-        }, 100);
-    }
-
-    displayError(errorMessage) {
-        const resultsContainer = document.getElementById('analysis-results');
-        if (!resultsContainer) return;
-
-        resultsContainer.innerHTML = `
-            <div class="error-message">
-                <h3>Oops! Something went wrong</h3>
-                <p>${errorMessage}</p>
-                <button onclick="menuScanner.closeModal()" class="plan-button primary" style="margin-top: 1rem;">
-                    Try Again
-                </button>
-            </div>
-        `;
-    }
-
-    closeModal() {
-        const modal = document.getElementById('result-modal');
-        if (modal) {
-            modal.style.display = 'none';
-            document.body.style.overflow = 'auto';
-        }
-    }
-
-    formatFileSize(bytes) {
-        if (bytes === 0) return '0 Bytes';
-        const k = 1024;
-        const sizes = ['Bytes', 'KB', 'MB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-    }
-}
 
 // Initialize when page loads
 document.addEventListener('DOMContentLoaded', () => {
@@ -333,23 +245,23 @@ function scrollToUpload() {
 }
 
 function setupDishClickHandlers(userId, scanId) {
+    const sessionId = sessionStorage.getItem('sessionId');
     document.querySelectorAll('.dish-name').forEach(el => {
         el.addEventListener('click', async function() {
             const dishName = this.dataset.dishName;
             const dishDesc = this.dataset.dishDesc || '';
             const explanationEl = this.nextElementSibling;
 
-            // Show loading state
             explanationEl.textContent = 'Loading explanation...';
 
-            // Fetch explanation from Netlify function
             const response = await fetch('/.netlify/functions/get-dish-explanation', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     name: dishName,
                     description: dishDesc,
-                    userId: userId,
+                    userId: userId || null,
+                    sessionId: sessionId,
                     scanId: scanId
                 })
             });

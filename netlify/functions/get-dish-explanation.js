@@ -12,6 +12,7 @@ const supabase = createClient(
 
 // Helper: Get user tier from user_subscriptions table
 async function getUserTier(userId) {
+    if (!userId) return 'free';
     const { data, error } = await supabase
         .from('user_subscriptions')
         .select('subscription_type')
@@ -58,8 +59,8 @@ exports.handler = async (event, context) => {
     }
 
     try {
-        const { name, description = '', userId, scanId, language = 'en' } = JSON.parse(event.body || '{}');
-        if (!name || !userId || !scanId) {
+        const { name, description = '', userId, sessionId, scanId, language = 'en' } = JSON.parse(event.body || '{}');
+        if (!name || !scanId || (!userId && !sessionId)) {
             return {
                 statusCode: 400,
                 headers,
@@ -67,9 +68,11 @@ exports.handler = async (event, context) => {
             };
         }
 
-        // 1. Get user tier
-        const userTier = await getUserTier(userId);
-        console.log(`User ${userId} has tier: ${userTier}`);
+        // 1. Get user tier (if userId present)
+        let userTier = 'free';
+        if (userId) {
+            userTier = await getUserTier(userId);
+        }
 
         // 2. Enforce explanation limits
         if (userTier === 'free') {
@@ -128,7 +131,8 @@ exports.handler = async (event, context) => {
                 explanation,
                 language,
                 scan_id: scanId,
-                user_id: userId,
+                user_id: userId || null,
+                session_id: sessionId || null,
                 created_at: new Date().toISOString()
             }
         ]);

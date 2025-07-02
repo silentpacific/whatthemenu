@@ -30,10 +30,17 @@ async function getUserScanCount(userId) {
         .from('menu_scans')
         .select('*', { count: 'exact', head: true })
         .eq('user_id', userId);
-    if (error) {
-        console.error('Supabase scan count error:', error);
-        return 0;
-    }
+    if (error) return 0;
+    return count || 0;
+}
+
+// Helper: Count scans for session (for anonymous free tier)
+async function getSessionScanCount(sessionId) {
+    const { count, error } = await supabase
+        .from('menu_scans')
+        .select('*', { count: 'exact', head: true })
+        .eq('session_id', sessionId);
+    if (error) return 0;
     return count || 0;
 }
 
@@ -59,36 +66,50 @@ exports.handler = async (event, context) => {
     }
 
     try {
-        const { image, userId } = JSON.parse(event.body || '{}');
-        if (!image || !userId) {
+        const { image, userId, sessionId } = JSON.parse(event.body || '{}');
+        if (!image || (!userId && !sessionId)) {
             return {
                 statusCode: 400,
                 headers,
-                body: JSON.stringify({ success: false, error: 'No image or user ID provided' })
+                body: JSON.stringify({ success: false, error: 'No image or session/user ID provided' })
             };
         }
 
-        // 1. Get user tier
-        const userTier = await getUserTier(userId);
-        console.log(`User ${userId} has tier: ${userTier}`);
-
-        // 2. Enforce scan limits
-        if (userTier === 'free') {
-            const scanCount = await getUserScanCount(userId);
+        // 1. Determine tier and enforce scan limits
+        let userTier = 'free';
+        if (userId) {
+            userTier = await getUserTier(userId);
+            if (userTier === 'free') {
+                const scanCount = await getUserScanCount(userId);
+                if (scanCount >= 5) {
+                    return {
+                        statusCode: 429,
+                        headers,
+                        body: JSON.stringify({ 
+                            success: false, 
+                            error: 'Free tier scan limit reached. Please upgrade to continue.',
+                            scansRemaining: 0
+                        })
+                    };
+                }
+            }
+        } else {
+            // Anonymous user (sessionId)
+            const scanCount = await getSessionScanCount(sessionId);
             if (scanCount >= 5) {
                 return {
                     statusCode: 429,
                     headers,
                     body: JSON.stringify({ 
                         success: false, 
-                        error: 'Free tier scan limit reached. Please upgrade to continue.',
+                        error: 'Free tier scan limit reached. Please create an account or upgrade to continue.',
                         scansRemaining: 0
                     })
                 };
             }
         }
 
-        // 3. Use OpenAI Vision to extract and parse menu
+        // 2. Use OpenAI Vision to extract and parse menu
         const base64Image = image.startsWith('data:') ? image.split(',')[1] : image;
         const visionResponse = await openai.chat.completions.create({
             model: "gpt-4o",
@@ -122,20 +143,22 @@ exports.handler = async (event, context) => {
             };
         }
 
-        // 4. Store scan in Supabase
-        const { error: scanError } = await supabase.from('menu_scans').insert([
+        // 3. Store scan in Supabase
+        const { data: scanInsertData, error: scanError } = await supabase.from('menu_scans').insert([
             {
-                user_id: userId,
+                user_id: userId || null,
+                session_id: sessionId || null,
                 tier: userTier,
                 menu_json: parsedSections,
                 created_at: new Date().toISOString()
             }
-        ]);
+        ]).select().single();
+
         if (scanError) {
             console.error('Supabase scan insert error:', scanError);
         }
 
-        // 5. Return structured menu
+        // 4. Return structured menu, userId, scanId
         return {
             statusCode: 200,
             headers,
@@ -144,6 +167,8 @@ exports.handler = async (event, context) => {
                 data: {
                     sections: parsedSections,
                     userTier,
+                    userId: userId || '',
+                    scanId: scanInsertData?.id || '',
                     processingTime: Date.now() - startTime
                 }
             })
