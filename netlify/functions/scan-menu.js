@@ -27,46 +27,28 @@ const supabase = createClient(
  */
 async function extractTextFromImage(base64Image) {
     try {
-        console.log('🔍 Starting Google Cloud Vision text extraction...');
+        console.log('🔍 Starting Google Cloud Vision DOCUMENT text extraction...');
         
-        const [result] = await visionClient.textDetection({
+        const [result] = await visionClient.documentTextDetection({
             image: {
                 content: base64Image,
             },
             imageContext: {
                 languageHints: ['en', 'es', 'fr', 'de', 'it', 'ja', 'ko', 'zh', 'th', 'vi'],
-                // Add these settings for better layout detection
-                textDetectionParams: {
-                    enableTextDetectionConfidenceScore: true
-                }
             },
         });
 
-        const detections = result.textAnnotations;
-        
-        if (!detections || detections.length === 0) {
+        const fullTextAnnotation = result.fullTextAnnotation;
+        if (!fullTextAnnotation || !fullTextAnnotation.text) {
             throw new Error('No text detected in image');
         }
 
-        // Get the full text with layout information
-        const fullText = detections[0].description;
-        
-        // Also get individual text blocks with positioning
-        const textBlocks = detections.slice(1).map(block => ({
-            text: block.description,
-            bounds: block.boundingPoly.vertices,
-            confidence: block.confidence || 0
-        }));
-
-        console.log(`✅ Extracted ${fullText.length} characters of text`);
-        console.log(`�� Found ${textBlocks.length} text blocks`);
-        
+        // This gives you the full text, and you can also access blocks, paragraphs, words, etc.
         return {
-            fullText: fullText,
-            textBlocks: textBlocks,
-            detectedLanguages: result.textAnnotations[0]?.locale || 'unknown'
+            fullText: fullTextAnnotation.text,
+            blocks: fullTextAnnotation.pages?.[0]?.blocks || [],
+            detectedLanguages: fullTextAnnotation.pages?.[0]?.property?.detectedLanguages || []
         };
-        
     } catch (error) {
         console.error('❌ Google Vision API error:', error);
         throw new Error(`Text extraction failed: ${error.message}`);
@@ -76,11 +58,14 @@ async function extractTextFromImage(base64Image) {
 /**
  * Enhanced menu text parser with better layout detection
  */
-function parseMenuText(ocrText, textBlocks = []) {
-    console.log('🔍 Parsing menu text...');
+/**
+ * Enhanced menu parser using Google Vision blocks and paragraphs
+ */
+function parseMenuText(ocrText, blocks = []) {
+    console.log('�� Parsing menu using block structure...');
     console.log('Raw OCR text:', ocrText);
+    console.log('Number of blocks:', blocks.length);
     
-    const lines = ocrText.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
     const sections = [];
     let currentSection = { name: 'Main Dishes', dishes: [] };
     
@@ -89,84 +74,170 @@ function parseMenuText(ocrText, textBlocks = []) {
     const sectionRegex = /^[A-Z][A-Z\s\-\&]+$/; // ALL CAPS
     const dietaryRegex = /(vegan|vegetarian|gluten[- ]?free|gf|v|🌱|��|🌶|spicy|dairy[- ]?free|nut[- ]?free)/i;
     
-    // Menu structure detection
-    let currentDish = null;
-    let dishBuffer = [];
-    
-    for (let i = 0; i < lines.length; i++) {
-        const line = lines[i];
-        console.log(`Processing line ${i}: "${line}"`);
+    // If we have blocks, use them for better parsing
+    if (blocks && blocks.length > 0) {
+        console.log('🔍 Using block-based parsing...');
         
-        // Skip empty lines and prices
-        if (!line || priceRegex.test(line)) {
-            console.log(`Skipping line (empty or price): "${line}"`);
-            continue;
-        }
-        
-        // Detect sections (ALL CAPS, short lines)
-        if (sectionRegex.test(line) && line.length > 3 && line.length < 40) {
-            console.log(`Found section: "${line}"`);
-            if (currentSection.dishes.length > 0) {
-                sections.push(currentSection);
-            }
-            currentSection = { name: line.replace(/\s+/g, ' ').trim(), dishes: [] };
-            currentDish = null;
-            dishBuffer = [];
-            continue;
-        }
-        
-        // Detect dish names (Title Case, reasonable length)
-        const isTitleCase = /^[A-Z][a-zA-Z\s'',-]+$/.test(line);
-        const reasonableLength = line.length > 2 && line.length < 80;
-        const notJustNumbers = !/^\d+$/.test(line);
-        
-        if (isTitleCase && reasonableLength && notJustNumbers) {
-            // Save previous dish if exists
-            if (currentDish && dishBuffer.length > 0) {
-                currentDish.description = dishBuffer.join(' ').trim();
-                currentSection.dishes.push(currentDish);
-                console.log(`Saved dish: "${currentDish.name}" with description: "${currentDish.description}"`);
-            }
+        // Process each block
+        for (const block of blocks) {
+            if (!block.paragraphs) continue;
             
-            // Start new dish
-            currentDish = {
-                name: line.trim(),
-                description: '',
-                dietary: []
-            };
-            
-            // Check for dietary info in name
-            const dietaryMatches = line.match(dietaryRegex);
-            if (dietaryMatches) {
-                currentDish.dietary.push(...dietaryMatches.map(m => m.toLowerCase()));
-            }
-            
-            dishBuffer = [];
-            console.log(`Found dish: "${currentDish.name}"`);
-            continue;
-        }
-        
-        // If we have a current dish, this line might be description
-        if (currentDish && !sectionRegex.test(line)) {
-            // Check if line contains dietary info
-            if (dietaryRegex.test(line)) {
-                const matches = line.match(dietaryRegex);
-                if (matches) {
-                    currentDish.dietary.push(...matches.map(m => m.toLowerCase()));
+            // Get all text from this block
+            let blockText = '';
+            for (const paragraph of block.paragraphs) {
+                if (paragraph.words) {
+                    const paragraphText = paragraph.words
+                        .map(word => word.symbols?.map(s => s.text).join('') || '')
+                        .join(' ');
+                    blockText += paragraphText + ' ';
                 }
             }
+            blockText = blockText.trim();
             
-            // Add to description buffer
-            dishBuffer.push(line);
-            console.log(`Added to description: "${line}"`);
+            console.log(`Processing block: "${blockText}"`);
+            
+            // Skip empty blocks and prices
+            if (!blockText || priceRegex.test(blockText)) {
+                console.log(`Skipping block (empty or price): "${blockText}"`);
+                continue;
+            }
+            
+            // Detect sections (ALL CAPS, short blocks)
+            if (sectionRegex.test(blockText) && blockText.length > 3 && blockText.length < 40) {
+                console.log(`Found section: "${blockText}"`);
+                if (currentSection.dishes.length > 0) {
+                    sections.push(currentSection);
+                }
+                currentSection = { name: blockText.replace(/\s+/g, ' ').trim(), dishes: [] };
+                continue;
+            }
+            
+            // Detect dish names (Title Case, reasonable length)
+            const isTitleCase = /^[A-Z][a-zA-Z\s'',-]+$/.test(blockText);
+            const reasonableLength = blockText.length > 2 && blockText.length < 80;
+            const notJustNumbers = !/^\d+$/.test(blockText);
+            
+            if (isTitleCase && reasonableLength && notJustNumbers) {
+                // Start new dish
+                const currentDish = {
+                    name: blockText.trim(),
+                    description: '',
+                    dietary: []
+                };
+                
+                // Check for dietary info in name
+                const dietaryMatches = blockText.match(dietaryRegex);
+                if (dietaryMatches) {
+                    currentDish.dietary.push(...dietaryMatches.map(m => m.toLowerCase()));
+                }
+                
+                currentSection.dishes.push(currentDish);
+                console.log(`Found dish: "${currentDish.name}"`);
+            } else {
+                // This might be a description - attach to the last dish
+                if (currentSection.dishes.length > 0) {
+                    const lastDish = currentSection.dishes[currentSection.dishes.length - 1];
+                    
+                    // Check if line contains dietary info
+                    if (dietaryRegex.test(blockText)) {
+                        const matches = blockText.match(dietaryRegex);
+                        if (matches) {
+                            lastDish.dietary.push(...matches.map(m => m.toLowerCase()));
+                        }
+                    }
+                    
+                    // Add to description
+                    if (lastDish.description) {
+                        lastDish.description += ' ';
+                    }
+                    lastDish.description += blockText;
+                    console.log(`Added description to "${lastDish.name}": "${blockText}"`);
+                }
+            }
         }
-    }
-    
-    // Save the last dish
-    if (currentDish && dishBuffer.length > 0) {
-        currentDish.description = dishBuffer.join(' ').trim();
-        currentSection.dishes.push(currentDish);
-        console.log(`Saved final dish: "${currentDish.name}"`);
+    } else {
+        // Fallback to line-based parsing if no blocks
+        console.log('🔍 Falling back to line-based parsing...');
+        
+        const lines = ocrText.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+        let currentDish = null;
+        let dishBuffer = [];
+        
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
+            console.log(`Processing line ${i}: "${line}"`);
+            
+            // Skip empty lines and prices
+            if (!line || priceRegex.test(line)) {
+                console.log(`Skipping line (empty or price): "${line}"`);
+                continue;
+            }
+            
+            // Detect sections (ALL CAPS, short lines)
+            if (sectionRegex.test(line) && line.length > 3 && line.length < 40) {
+                console.log(`Found section: "${line}"`);
+                if (currentSection.dishes.length > 0) {
+                    sections.push(currentSection);
+                }
+                currentSection = { name: line.replace(/\s+/g, ' ').trim(), dishes: [] };
+                currentDish = null;
+                dishBuffer = [];
+                continue;
+            }
+            
+            // Detect dish names (Title Case, reasonable length)
+            const isTitleCase = /^[A-Z][a-zA-Z\s'',-]+$/.test(line);
+            const reasonableLength = line.length > 2 && line.length < 80;
+            const notJustNumbers = !/^\d+$/.test(line);
+            
+            if (isTitleCase && reasonableLength && notJustNumbers) {
+                // Save previous dish if exists
+                if (currentDish && dishBuffer.length > 0) {
+                    currentDish.description = dishBuffer.join(' ').trim();
+                    currentSection.dishes.push(currentDish);
+                    console.log(`Saved dish: "${currentDish.name}" with description: "${currentDish.description}"`);
+                }
+                
+                // Start new dish
+                currentDish = {
+                    name: line.trim(),
+                    description: '',
+                    dietary: []
+                };
+                
+                // Check for dietary info in name
+                const dietaryMatches = line.match(dietaryRegex);
+                if (dietaryMatches) {
+                    currentDish.dietary.push(...dietaryMatches.map(m => m.toLowerCase()));
+                }
+                
+                dishBuffer = [];
+                console.log(`Found dish: "${currentDish.name}"`);
+                continue;
+            }
+            
+            // If we have a current dish, this line might be description
+            if (currentDish && !sectionRegex.test(line)) {
+                // Check if line contains dietary info
+                if (dietaryRegex.test(line)) {
+                    const matches = line.match(dietaryRegex);
+                    if (matches) {
+                        currentDish.dietary.push(...matches.map(m => m.toLowerCase()));
+                    }
+                }
+                
+                // Add to description buffer
+                dishBuffer.push(line);
+                console.log(`Added to description: "${line}"`);
+            }
+        }
+        
+        // Save the last dish
+        if (currentDish && dishBuffer.length > 0) {
+            currentDish.description = dishBuffer.join(' ').trim();
+            currentSection.dishes.push(currentDish);
+            console.log(`Saved final dish: "${currentDish.name}"`);
+        }
     }
     
     if (currentSection.dishes.length > 0) {
@@ -356,16 +427,8 @@ exports.handler = async (event, context) => {
             };
         }
 
-        // 1. OCR: Extract text from image with enhanced settings
+        // 1. OCR: Extract text from image
         const visionResult = await extractTextFromImage(image);
-        
-        // Debug logging
-        console.log('🔍 OCR Result:', {
-            fullText: visionResult.fullText,
-            textBlocks: visionResult.textBlocks?.length || 0,
-            detectedLanguages: visionResult.detectedLanguages
-        });
-        
         if (!visionResult.fullText || visionResult.fullText.trim().length < 10) {
             return {
                 statusCode: 400,
@@ -377,11 +440,8 @@ exports.handler = async (event, context) => {
             };
         }
 
-        // 2. Parse menu text into sections/dishes with enhanced parser
-        const parsedSections = parseMenuText(visionResult.fullText, visionResult.textBlocks);
-        
-        // Debug logging
-        console.log('�� Parsed Sections:', JSON.stringify(parsedSections, null, 2));
+        // 2. Parse menu text into sections/dishes
+        const parsedSections = parseMenuText(visionResult.fullText, visionResult.blocks);
 
         // 3. Flatten all dishes for lookup
         const allDishes = [];
@@ -406,7 +466,10 @@ exports.handler = async (event, context) => {
             });
         });
 
-        // 7. Return results
+        // 7. Save scan to DB (optional, you can keep your existing logic)
+        // (You may want to update this to use the new structure if needed)
+
+        // 8. Return results
         return {
             statusCode: 200,
             headers,
