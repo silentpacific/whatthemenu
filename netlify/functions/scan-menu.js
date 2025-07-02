@@ -435,96 +435,91 @@ exports.handler = async (event, context) => {
         };
     }
 
-    try {
-        const { 
-            image, 
-            targetLanguage = 'en',
-            userId = null,
-            sessionId = null,
-            userFingerprint = null
-        } = JSON.parse(event.body || '{}');
+try {
+    const { 
+        image, 
+        targetLanguage = 'en',
+        userId = null,
+        sessionId = null,
+        userFingerprint = null
+    } = JSON.parse(event.body || '{}');
 
-        if (!image) {
-            return {
-                statusCode: 400,
-                headers,
-                body: JSON.stringify({ success: false, error: 'No image provided' })
-            };
-        }
-
-        console.log(`🚀 Starting menu scan for ${userId ? 'user ' + userId : 'session ' + sessionId}`);
-
-        // Permission check (keep this)
-        const permission = await checkUserScanPermission(userId, sessionId);
-        if (!permission.canScan) {
-            return {
-                statusCode: 429,
-                headers,
-                body: JSON.stringify({ 
-                    success: false, 
-                    error: 'Scan limit reached. Please upgrade to continue.',
-                    scansRemaining: permission.scansRemaining || 0
-                })
-            };
-        }
-
-        // 1. OCR: Extract text from image
-        const visionResult = await extractTextFromImage(image);
-        if (!visionResult.fullText || visionResult.fullText.trim().length < 10) {
-            return {
-                statusCode: 400,
-                headers,
-                body: JSON.stringify({ 
-                    success: false, 
-                    error: 'No readable text found in image. Please try a clearer photo.' 
-                })
-            };
-        }
-
-        // 2. Parse menu text into sections/dishes
-        const parsedSections = parseMenuText(visionResult.fullText);
-
-        // 3. Flatten all dishes for lookup
-        const allDishes = [];
-        parsedSections.forEach(section => {
-            section.dishes.forEach(dish => allDishes.push(dish));
-        });
-
-        // 4. Lookup dishes in Supabase
-        const dbExplanations = await lookupDishesInSupabase(allDishes, targetLanguage);
-
-        // 5. For missing dishes, use OpenAI and save to Supabase
-        const missingDishes = allDishes.filter(dish => !dbExplanations[dish.name]);
-        let aiExplanations = {};
-        if (missingDishes.length > 0) {
-            aiExplanations = await fetchAndSaveExplanationsFromOpenAI(missingDishes, targetLanguage);
-        }
-
-        // 6. Attach explanations to dishes
-        parsedSections.forEach(section => {
-            section.dishes.forEach(dish => {
-                dish.explanation = dbExplanations[dish.name] || aiExplanations[dish.name] || '';
-            });
-        });
-
-        // 7. Save scan to DB (optional, you can keep your existing logic)
-        // (You may want to update this to use the new structure if needed)
-
-        // 8. Return results
+    if (!image) {
         return {
-            statusCode: 200,
+            statusCode: 400,
             headers,
-            body: JSON.stringify({
-                success: true,
-                data: {
-                    sections: parsedSections,
-                    sourceLanguage: visionResult.detectedLanguages || 'unknown',
-                    targetLanguage: targetLanguage,
-                    processingTime: Date.now() - startTime,
-                    dishesFound: allDishes.length
-                }
+            body: JSON.stringify({ success: false, error: 'No image provided' })
+        };
+    }
+
+    // Permission check (keep this)
+    const permission = await checkUserScanPermission(userId, sessionId);
+    if (!permission.canScan) {
+        return {
+            statusCode: 429,
+            headers,
+            body: JSON.stringify({ 
+                success: false, 
+                error: 'Scan limit reached. Please upgrade to continue.',
+                scansRemaining: permission.scansRemaining || 0
             })
         };
+    }
+
+    // 1. OCR: Extract text from image
+    const visionResult = await extractTextFromImage(image);
+    if (!visionResult.fullText || visionResult.fullText.trim().length < 10) {
+        return {
+            statusCode: 400,
+            headers,
+            body: JSON.stringify({ 
+                success: false, 
+                error: 'No readable text found in image. Please try a clearer photo.' 
+            })
+        };
+    }
+
+    // 2. Parse menu text into sections/dishes
+    const parsedSections = parseMenuText(visionResult.fullText);
+
+    // 3. Flatten all dishes for lookup
+    const allDishes = [];
+    parsedSections.forEach(section => {
+        section.dishes.forEach(dish => allDishes.push(dish));
+    });
+
+    // 4. Lookup dishes in Supabase
+    const dbExplanations = await lookupDishesInSupabase(allDishes, targetLanguage);
+
+    // 5. For missing dishes, use OpenAI and save to Supabase
+    const missingDishes = allDishes.filter(dish => !dbExplanations[dish.name]);
+    let aiExplanations = {};
+    if (missingDishes.length > 0) {
+        aiExplanations = await fetchAndSaveExplanationsFromOpenAI(missingDishes, targetLanguage);
+    }
+
+    // 6. Attach explanations to dishes
+    parsedSections.forEach(section => {
+        section.dishes.forEach(dish => {
+            dish.explanation = dbExplanations[dish.name] || aiExplanations[dish.name] || '';
+        });
+    });
+
+    // 7. Return results
+    return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({
+            success: true,
+            data: {
+                sections: parsedSections,
+                sourceLanguage: visionResult.detectedLanguages || 'unknown',
+                targetLanguage: targetLanguage,
+                processingTime: Date.now() - startTime,
+                dishesFound: allDishes.length
+            }
+        })
+    };
 
     } catch (error) {
         console.error('❌ Scan function error:', error);
