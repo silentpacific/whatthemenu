@@ -131,6 +131,7 @@ exports.handler = async (event, context) => {
         });
 
         const responseText = visionResponse.choices[0]?.message?.content?.trim();
+        console.log("OpenAI raw response:", responseText);
         let parsedSections;
         try {
             parsedSections = JSON.parse(responseText);
