@@ -19,13 +19,16 @@
   "author": "What The Menu Team",
   "license": "MIT",
   "dependencies": {
+    "@google-cloud/vision": "^5.2.0",
+    "@supabase/supabase-js": "^2.50.2",
+    "fuse.js": "^7.1.0",
+    "netlify-lambda": "^0.4.0",
     "node-fetch": "^2.6.7",
-    "openai": "^4.20.1",
-    "stripe": "^14.7.0",
-    "@supabase/supabase-js": "^2.39.0"
+    "openai": "^4.104.0",
+    "stripe": "^14.7.0"
   },
   "devDependencies": {
-    "netlify-cli": "^17.10.1"
+    "netlify-cli": "^22.2.1"
   },
   "engines": {
     "node": ">=18.0.0"

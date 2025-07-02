@@ -23,6 +23,125 @@ const supabase = createClient(
 );
 
 /**
+ * Parse OCR text into structured menu sections and dishes
+ */
+function parseMenuText(ocrText) {
+    const lines = ocrText.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+    const sections = [];
+    let currentSection = { name: 'Main Dishes', dishes: [] };
+    let lastDish = null;
+
+    // Regex patterns
+    const priceRegex = /([\$€£¥₹]?\d{1,3}(?:[.,]\d{2})?\s?(?:USD|EUR|INR|GBP|¥|€|\$)?)/i;
+    const sectionRegex = /^[A-Z][A-Z\s\-\&]+$/; // ALL CAPS
+    const dietaryRegex = /(vegan|vegetarian|gluten[- ]?free|gf|v|🌱|🥦|🌶|spicy|dairy[- ]?free|nut[- ]?free)/i;
+
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        if (priceRegex.test(line)) continue; // Ignore prices
+        if (sectionRegex.test(line) && line.length > 3 && line.length < 40) {
+            // New section
+            if (currentSection.dishes.length > 0) sections.push(currentSection);
+            currentSection = { name: line.replace(/\s+/g, ' ').trim(), dishes: [] };
+            lastDish = null;
+            continue;
+        }
+        // Dish name: Title Case, not a section, not a price
+        if (/^[A-Z][a-zA-Z\s'’,-]+$/.test(line) && line.length > 2 && line.length < 60) {
+            // Start new dish
+            lastDish = {
+                name: line.trim(),
+                description: '',
+                dietary: []
+            };
+            // Check for dietary in name
+            const dietaryMatches = line.match(dietaryRegex);
+            if (dietaryMatches) lastDish.dietary.push(dietaryMatches[0].toLowerCase());
+            currentSection.dishes.push(lastDish);
+            continue;
+        }
+        // If line contains dietary info
+        if (lastDish && dietaryRegex.test(line)) {
+            const matches = line.match(dietaryRegex);
+            if (matches) {
+                lastDish.dietary.push(...matches.map(m => m.toLowerCase()));
+            }
+        }
+        // If line is a description (not a price, not a section)
+        if (lastDish && !priceRegex.test(line) && !sectionRegex.test(line)) {
+            if (lastDish.description) lastDish.description += ' ';
+            lastDish.description += line;
+        }
+    }
+    if (currentSection.dishes.length > 0) sections.push(currentSection);
+    return sections;
+}
+
+/**
+ * Batch lookup dish explanations in Supabase
+ * @param {Array} dishes - Array of { name }
+ * @param {string} language
+ * @returns {Object} Map of dish name to explanation
+ */
+async function lookupDishesInSupabase(dishes, language = 'en') {
+    const names = dishes.map(d => d.name);
+    const { data, error } = await supabase
+        .from('dishes')
+        .select('name, explanation')
+        .in('name', names)
+        .eq('language', language);
+    if (error) {
+        console.error('Supabase lookup error:', error);
+        return {};
+    }
+    const map = {};
+    for (const row of data) {
+        map[row.name] = row.explanation;
+    }
+    return map;
+}
+
+/**
+ * Query OpenAI for missing dish explanations and save to Supabase
+ * @param {Array} dishes - Array of { name, description, dietary }
+ * @param {string} language
+ * @returns {Object} Map of dish name to explanation
+ */
+async function fetchAndSaveExplanationsFromOpenAI(dishes, language = 'en') {
+    const map = {};
+    for (const dish of dishes) {
+        const prompt = `Explain the following dish for a menu in a friendly, concise way (max 60 words). Include dietary notes if available.\n\nDish: ${dish.name}\nDescription: ${dish.description}\nDietary: ${dish.dietary.join(', ')}`;
+        try {
+            const completion = await openai.chat.completions.create({
+                model: 'gpt-4o',
+                messages: [
+                    { role: 'system', content: 'You are a helpful food explainer. Respond with a short, clear explanation.' },
+                    { role: 'user', content: prompt }
+                ],
+                max_tokens: 200,
+                temperature: 0.4
+            });
+            const explanation = completion.choices[0]?.message?.content?.trim();
+            map[dish.name] = explanation;
+            // Save to Supabase
+            await supabase.from('dishes').insert([
+                {
+                    name: dish.name,
+                    explanation,
+                    language,
+                    cuisine_type: null,
+                    dietary_tags: dish.dietary,
+                    confidence_score: 0.9
+                }
+            ]);
+        } catch (error) {
+            console.error(`OpenAI error for ${dish.name}:`, error);
+        }
+    }
+    return map;
+}
+
+/**
  * Extract text from image using Google Cloud Vision
  */
 async function extractTextFromImage(base64Image) {
@@ -335,9 +454,8 @@ exports.handler = async (event, context) => {
 
         console.log(`🚀 Starting menu scan for ${userId ? 'user ' + userId : 'session ' + sessionId}`);
 
-        // Check permissions using your schema
+        // Permission check (keep this)
         const permission = await checkUserScanPermission(userId, sessionId);
-        
         if (!permission.canScan) {
             return {
                 statusCode: 429,
@@ -350,9 +468,8 @@ exports.handler = async (event, context) => {
             };
         }
 
-        // Extract text from image
+        // 1. OCR: Extract text from image
         const visionResult = await extractTextFromImage(image);
-        
         if (!visionResult.fullText || visionResult.fullText.trim().length < 10) {
             return {
                 statusCode: 400,
@@ -364,54 +481,47 @@ exports.handler = async (event, context) => {
             };
         }
 
-        // Process with AI
-        const aiResult = await processMenuWithAI(visionResult.fullText, targetLanguage);
-        
-        if (aiResult.confidence < 0.5) {
-            return {
-                statusCode: 400,
-                headers,
-                body: JSON.stringify({ 
-                    success: false, 
-                    error: 'Image does not appear to contain a readable menu. Please try a different photo.' 
-                })
-            };
+        // 2. Parse menu text into sections/dishes
+        const parsedSections = parseMenuText(visionResult.fullText);
+
+        // 3. Flatten all dishes for lookup
+        const allDishes = [];
+        parsedSections.forEach(section => {
+            section.dishes.forEach(dish => allDishes.push(dish));
+        });
+
+        // 4. Lookup dishes in Supabase
+        const dbExplanations = await lookupDishesInSupabase(allDishes, targetLanguage);
+
+        // 5. For missing dishes, use OpenAI and save to Supabase
+        const missingDishes = allDishes.filter(dish => !dbExplanations[dish.name]);
+        let aiExplanations = {};
+        if (missingDishes.length > 0) {
+            aiExplanations = await fetchAndSaveExplanationsFromOpenAI(missingDishes, targetLanguage);
         }
 
-        // Count total dishes for tracking
-        const dishesCount = aiResult.sections.reduce((total, section) => total + section.dishes.length, 0);
+        // 6. Attach explanations to dishes
+        parsedSections.forEach(section => {
+            section.dishes.forEach(dish => {
+                dish.explanation = dbExplanations[dish.name] || aiExplanations[dish.name] || '';
+            });
+        });
 
-        // Save scan to database
-        const scanData = {
-            user_id: userId,
-            session_id: sessionId,
-            user_fingerprint: userFingerprint,
-            original_text: visionResult.fullText,
-            translated_sections: aiResult.sections,
-            source_language: aiResult.sourceLanguage,
-            target_language: targetLanguage,
-            processing_time_ms: Date.now() - startTime,
-            dishes_count: dishesCount
-        };
-        
-        saveScanToDatabase(scanData); // Don't await
+        // 7. Save scan to DB (optional, you can keep your existing logic)
+        // (You may want to update this to use the new structure if needed)
 
-        console.log(`✅ Menu scan completed in ${Date.now() - startTime}ms`);
-
-        // Return success response
+        // 8. Return results
         return {
             statusCode: 200,
             headers,
             body: JSON.stringify({
                 success: true,
                 data: {
-                    sections: aiResult.sections,
-                    sourceLanguage: aiResult.sourceLanguage,
+                    sections: parsedSections,
+                    sourceLanguage: visionResult.detectedLanguages || 'unknown',
                     targetLanguage: targetLanguage,
-                    confidence: aiResult.confidence,
-                    warnings: aiResult.warnings || [],
                     processingTime: Date.now() - startTime,
-                    dishesFound: dishesCount
+                    dishesFound: allDishes.length
                 }
             })
         };
