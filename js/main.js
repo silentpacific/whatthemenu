@@ -332,7 +332,7 @@ function scrollToUpload() {
     }
 }
 
-function setupDishClickHandlers() {
+function setupDishClickHandlers(userId, scanId) {
     document.querySelectorAll('.dish-name').forEach(el => {
         el.addEventListener('click', async function() {
             const dishName = this.dataset.dishName;
@@ -346,14 +346,19 @@ function setupDishClickHandlers() {
             const response = await fetch('/.netlify/functions/get-dish-explanation', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name: dishName, description: dishDesc })
+                body: JSON.stringify({
+                    name: dishName,
+                    description: dishDesc,
+                    userId: userId,
+                    scanId: scanId
+                })
             });
             const result = await response.json();
 
             if (result.success) {
                 explanationEl.textContent = result.explanation;
             } else {
-                explanationEl.textContent = 'Could not fetch explanation.';
+                explanationEl.textContent = result.error || 'Could not fetch explanation.';
             }
         });
     });

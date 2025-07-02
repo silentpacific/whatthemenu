@@ -10,6 +10,33 @@ const supabase = createClient(
     process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
+// Helper: Get user tier from user_subscriptions table
+async function getUserTier(userId) {
+    const { data, error } = await supabase
+        .from('user_subscriptions')
+        .select('subscription_type')
+        .eq('user_id', userId)
+        .maybeSingle();
+    if (error) {
+        console.error('Supabase user_subscriptions lookup error:', error);
+        return 'free'; // fallback to free
+    }
+    return data && data.subscription_type ? data.subscription_type : 'free';
+}
+
+// Helper: Count explanations for this scan (for free tier limit)
+async function getScanExplanationCount(scanId) {
+    const { count, error } = await supabase
+        .from('dishes')
+        .select('*', { count: 'exact', head: true })
+        .eq('scan_id', scanId);
+    if (error) {
+        console.error('Supabase explanation count error:', error);
+        return 0;
+    }
+    return count || 0;
+}
+
 exports.handler = async (event, context) => {
     const headers = {
         'Access-Control-Allow-Origin': '*',
@@ -31,35 +58,49 @@ exports.handler = async (event, context) => {
     }
 
     try {
-        const { name, description = '', language = 'en' } = JSON.parse(event.body || '{}');
-        console.log('Received request for:', name, '| Description:', description);
-
-        if (!name) {
-            console.log('No dish name provided');
+        const { name, description = '', userId, scanId, language = 'en' } = JSON.parse(event.body || '{}');
+        if (!name || !userId || !scanId) {
             return {
                 statusCode: 400,
                 headers,
-                body: JSON.stringify({ success: false, error: 'No dish name provided' })
+                body: JSON.stringify({ success: false, error: 'Missing required fields' })
             };
         }
 
-        // 1. Check Supabase for existing explanation
-        console.log('Checking Supabase...');
+        // 1. Get user tier
+        const userTier = await getUserTier(userId);
+        console.log(`User ${userId} has tier: ${userTier}`);
+
+        // 2. Enforce explanation limits
+        if (userTier === 'free') {
+            const explanationCount = await getScanExplanationCount(scanId);
+            if (explanationCount >= 5) {
+                return {
+                    statusCode: 429,
+                    headers,
+                    body: JSON.stringify({ 
+                        success: false, 
+                        error: 'Free tier allows only 5 explanations per scan. Please upgrade to continue.',
+                        explanationsRemaining: 0
+                    })
+                };
+            }
+        }
+
+        // 3. Check Supabase for existing explanation
         const { data, error } = await supabase
             .from('dishes')
             .select('explanation')
             .eq('name', name)
+            .eq('scan_id', scanId)
             .eq('language', language)
             .maybeSingle();
-
-        console.log('Supabase result:', data, '| Error:', error);
 
         if (error) {
             console.error('Supabase lookup error:', error);
         }
 
         if (data && data.explanation) {
-            console.log('Found explanation in DB, returning.');
             return {
                 statusCode: 200,
                 headers,
@@ -67,52 +108,30 @@ exports.handler = async (event, context) => {
             };
         }
 
-        // 2. If not found, query OpenAI with timeout
-        console.log('Querying OpenAI...');
-        function timeoutPromise(promise, ms) {
-            return Promise.race([
-                promise,
-                new Promise((_, reject) => setTimeout(() => reject(new Error('OpenAI timeout')), ms))
-            ]);
-        }
-
+        // 4. If not found, query OpenAI
         const prompt = `Explain the following dish for a menu in a friendly, concise way (max 60 words). Include dietary notes if available.\n\nDish: ${name}\nDescription: ${description}`;
-        let explanation = '';
-        try {
-            const completion = await timeoutPromise(
-                openai.chat.completions.create({
-                    model: 'gpt-4o',
-                    messages: [
-                        { role: 'system', content: 'You are a helpful food explainer. Respond with a short, clear explanation.' },
-                        { role: 'user', content: prompt }
-                    ],
-                    max_tokens: 200,
-                    temperature: 0.4
-                }),
-                8000 // 8 seconds timeout
-            );
-            explanation = completion.choices[0]?.message?.content?.trim();
-            console.log('OpenAI response:', explanation);
-        } catch (err) {
-            console.error('OpenAI error or timeout:', err);
-            return {
-                statusCode: 504,
-                headers,
-                body: JSON.stringify({ success: false, error: 'OpenAI timeout or error' })
-            };
-        }
+        const completion = await openai.chat.completions.create({
+            model: 'gpt-4o',
+            messages: [
+                { role: 'system', content: 'You are a helpful food explainer. Respond with a short, clear explanation.' },
+                { role: 'user', content: prompt }
+            ],
+            max_tokens: 200,
+            temperature: 0.4
+        });
+        const explanation = completion.choices[0]?.message?.content?.trim();
 
-        // 3. Save to Supabase
-        console.log('Saving to Supabase...');
+        // 5. Save to Supabase
         await supabase.from('dishes').insert([
             {
                 name,
                 explanation,
                 language,
-                confidence_score: 0.9
+                scan_id: scanId,
+                user_id: userId,
+                created_at: new Date().toISOString()
             }
         ]);
-        console.log('Saved to Supabase. Returning explanation.');
 
         return {
             statusCode: 200,

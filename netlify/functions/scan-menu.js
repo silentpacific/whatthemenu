@@ -1,17 +1,5 @@
-// netlify/functions/scan-menu.js
-
-const vision = require('@google-cloud/vision');
 const OpenAI = require('openai');
 const { createClient } = require('@supabase/supabase-js');
-
-// Initialize clients
-const visionClient = new vision.ImageAnnotatorClient({
-    projectId: process.env.GOOGLE_CLOUD_PROJECT_ID,
-    credentials: {
-        private_key: process.env.GOOGLE_CLOUD_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-        client_email: process.env.GOOGLE_CLOUD_CLIENT_EMAIL,
-    },
-});
 
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
@@ -22,223 +10,35 @@ const supabase = createClient(
     process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-/**
- * Extract text from image using Google Cloud Vision with enhanced settings
- */
-async function extractTextFromImage(base64Image) {
-    try {
-        console.log('🔍 Starting Google Cloud Vision DOCUMENT text extraction...');
-        
-        const [result] = await visionClient.documentTextDetection({
-            image: {
-                content: base64Image,
-            },
-            imageContext: {
-                languageHints: ['en', 'es', 'fr', 'de', 'it', 'ja', 'ko', 'zh', 'th', 'vi'],
-            },
-        });
-
-        const fullTextAnnotation = result.fullTextAnnotation;
-        if (!fullTextAnnotation || !fullTextAnnotation.text) {
-            throw new Error('No text detected in image');
-        }
-
-        // This gives you the full text, and you can also access blocks, paragraphs, words, etc.
-        return {
-            fullText: fullTextAnnotation.text,
-            blocks: fullTextAnnotation.pages?.[0]?.blocks || [],
-            detectedLanguages: fullTextAnnotation.pages?.[0]?.property?.detectedLanguages || []
-        };
-    } catch (error) {
-        console.error('❌ Google Vision API error:', error);
-        throw new Error(`Text extraction failed: ${error.message}`);
-    }
-}
-
-/**
- * Enhanced menu text parser with better layout detection
- */
-/**
- * Enhanced menu parser using Google Vision blocks and paragraphs
- */
-/**
- * Simple line-based menu parser (Tesseract-style)
- */
-function parseMenuText(ocrText) {
-    const lines = ocrText.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-    const sections = [];
-    let currentSection = { name: 'Main Dishes', dishes: [] };
-    let currentDish = null;
-    let dishBuffer = [];
-
-    // You can expand this list for more menu types
-    const sectionTitles = [
-        'STARTERS', 'PASTA SAUCE', 'RISOTTO', 'SIDES', 'CHOICE OF PASTA', 'ADD PASTA TOPPINGS'
-    ];
-    const priceRegex = /\$?\d+[.,]?\d*/;
-
-    for (let line of lines) {
-        // Section headers
-        if (sectionTitles.includes(line.toUpperCase())) {
-            if (currentSection.dishes.length > 0) sections.push(currentSection);
-            currentSection = { name: line, dishes: [] };
-            currentDish = null;
-            dishBuffer = [];
-            continue;
-        }
-        // Dish name: line ends with price (e.g. ...$9.9) or is bold/capitalized
-        if (priceRegex.test(line) && !line.toLowerCase().includes('option')) {
-            if (currentDish && dishBuffer.length > 0) {
-                currentDish.description = dishBuffer.join(' ').trim();
-                currentSection.dishes.push(currentDish);
-            }
-            currentDish = { name: line, description: '' };
-            dishBuffer = [];
-            continue;
-        }
-        // Description: follows a dish name
-        if (currentDish) {
-            dishBuffer.push(line);
-        }
-    }
-    // Save the last dish
-    if (currentDish && dishBuffer.length > 0) {
-        currentDish.description = dishBuffer.join(' ').trim();
-        currentSection.dishes.push(currentDish);
-    }
-    if (currentSection.dishes.length > 0) sections.push(currentSection);
-    return sections;
-}
-
-/**
- * Batch lookup dish explanations in Supabase
- * @param {Array} dishes - Array of { name }
- * @param {string} language
- * @returns {Object} Map of dish name to explanation
- */
-async function lookupDishesInSupabase(dishes, language = 'en') {
-    const names = dishes.map(d => d.name);
+// Helper: Get user tier from user_subscriptions table
+async function getUserTier(userId) {
     const { data, error } = await supabase
-        .from('dishes')
-        .select('name, explanation')
-        .in('name', names)
-        .eq('language', language);
+        .from('user_subscriptions')
+        .select('subscription_type')
+        .eq('user_id', userId)
+        .maybeSingle();
     if (error) {
-        console.error('Supabase lookup error:', error);
-        return {};
+        console.error('Supabase user_subscriptions lookup error:', error);
+        return 'free'; // fallback to free
     }
-    const map = {};
-    for (const row of data) {
-        map[row.name] = row.explanation;
-    }
-    return map;
+    return data && data.subscription_type ? data.subscription_type : 'free';
 }
 
-/**
- * Query OpenAI for missing dish explanations and save to Supabase
- * @param {Array} dishes - Array of { name, description, dietary }
- * @param {string} language
- * @returns {Object} Map of dish name to explanation
- */
-async function fetchAndSaveExplanationsFromOpenAI(dishes, language = 'en') {
-    const map = {};
-    for (const dish of dishes) {
-        const prompt = `Explain the following dish for a menu in a friendly, concise way (max 60 words). Include dietary notes if available.\n\nDish: ${dish.name}\nDescription: ${dish.description}\nDietary: ${(dish.dietary || []).join(', ')}`;
-        try {
-            const completion = await openai.chat.completions.create({
-                model: 'gpt-4o',
-                messages: [
-                    { role: 'system', content: 'You are a helpful food explainer. Respond with a short, clear explanation.' },
-                    { role: 'user', content: prompt }
-                ],
-                max_tokens: 200,
-                temperature: 0.4
-            });
-            const explanation = completion.choices[0]?.message?.content?.trim();
-            map[dish.name] = explanation;
-            // Save to Supabase
-            await supabase.from('dishes').insert([
-                {
-                    name: dish.name,
-                    explanation,
-                    language,
-                    cuisine_type: null,
-                    dietary_tags: dish.dietary,
-                    confidence_score: 0.9
-                }
-            ]);
-        } catch (error) {
-            console.error(`OpenAI error for ${dish.name}:`, error);
-        }
+// Helper: Count scans for user (for free tier limit)
+async function getUserScanCount(userId) {
+    const { count, error } = await supabase
+        .from('menu_scans')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', userId);
+    if (error) {
+        console.error('Supabase scan count error:', error);
+        return 0;
     }
-    return map;
+    return count || 0;
 }
 
-/**
- * Check if user can scan based on your existing schema
- */
-async function checkUserScanPermission(userId, sessionId) {
-    try {
-        if (userId) {
-            // Use your existing user_scan_limits view
-            const { data: userLimits, error } = await supabase
-                .from('user_scan_limits')
-                .select('*')
-                .eq('id', userId)
-                .single();
-
-            if (error) {
-                console.error('User lookup error:', error);
-                return { canScan: true, isAnonymous: true };
-            }
-
-            return { 
-                canScan: userLimits.can_scan, 
-                user: userLimits,
-                scansRemaining: userLimits.scans_remaining 
-            };
-            
-        } else if (sessionId) {
-            // Check anonymous session limits using your user_sessions table
-            const { data: session, error } = await supabase
-                .from('user_sessions')
-                .select('free_scans_used')
-                .eq('session_id', sessionId)
-                .single();
-
-            if (error || !session) {
-                // Create new session
-                const { data: newSession } = await supabase
-                    .from('user_sessions')
-                    .insert([{
-                        session_id: sessionId,
-                        free_scans_used: 0,
-                        expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days
-                    }])
-                    .select()
-                    .single();
-
-                return { canScan: true, isAnonymous: true, session: newSession };
-            }
-
-            const canScan = session.free_scans_used < 5; // Free limit
-            return { canScan, isAnonymous: true, session };
-        }
-
-        return { canScan: true, isAnonymous: true };
-        
-    } catch (error) {
-        console.error('Permission check error:', error);
-        return { canScan: true, isAnonymous: true };
-    }
-}
-
-/**
- * Main function handler
- */
 exports.handler = async (event, context) => {
     const startTime = Date.now();
-    
     const headers = {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Headers': 'Content-Type, Authorization',
@@ -259,79 +59,83 @@ exports.handler = async (event, context) => {
     }
 
     try {
-        const { 
-            image, 
-            targetLanguage = 'en',
-            userId = null,
-            sessionId = null,
-            userFingerprint = null
-        } = JSON.parse(event.body || '{}');
-
-        if (!image) {
+        const { image, userId } = JSON.parse(event.body || '{}');
+        if (!image || !userId) {
             return {
                 statusCode: 400,
                 headers,
-                body: JSON.stringify({ success: false, error: 'No image provided' })
+                body: JSON.stringify({ success: false, error: 'No image or user ID provided' })
             };
         }
 
-        // Permission check
-        const permission = await checkUserScanPermission(userId, sessionId);
-        if (!permission.canScan) {
-            return {
-                statusCode: 429,
-                headers,
-                body: JSON.stringify({ 
-                    success: false, 
-                    error: 'Scan limit reached. Please upgrade to continue.',
-                    scansRemaining: permission.scansRemaining || 0
-                })
-            };
+        // 1. Get user tier
+        const userTier = await getUserTier(userId);
+        console.log(`User ${userId} has tier: ${userTier}`);
+
+        // 2. Enforce scan limits
+        if (userTier === 'free') {
+            const scanCount = await getUserScanCount(userId);
+            if (scanCount >= 5) {
+                return {
+                    statusCode: 429,
+                    headers,
+                    body: JSON.stringify({ 
+                        success: false, 
+                        error: 'Free tier scan limit reached. Please upgrade to continue.',
+                        scansRemaining: 0
+                    })
+                };
+            }
         }
 
-        // 1. OCR: Extract text from image
-        const visionResult = await extractTextFromImage(image);
-        if (!visionResult.fullText || visionResult.fullText.trim().length < 10) {
-            return {
-                statusCode: 400,
-                headers,
-                body: JSON.stringify({ 
-                    success: false, 
-                    error: 'No readable text found in image. Please try a clearer photo.' 
-                })
-            };
-        }
-
-        // 2. Parse menu text into sections/dishes
-        const parsedSections = parseMenuText(visionResult.fullText);
-        
-        // 3. Flatten all dishes for lookup
-        const allDishes = [];
-        parsedSections.forEach(section => {
-            section.dishes.forEach(dish => allDishes.push(dish));
+        // 3. Use OpenAI Vision to extract and parse menu
+        const base64Image = image.startsWith('data:') ? image.split(',')[1] : image;
+        const visionResponse = await openai.chat.completions.create({
+            model: "gpt-4o",
+            messages: [
+                {
+                    role: "system",
+                    content: "You are a helpful assistant that extracts structured menu data from images. Always respond with valid JSON only."
+                },
+                {
+                    role: "user",
+                    content: [
+                        { type: "text", text: `Extract all menu sections, dish names, prices, and descriptions from this menu image. Return as a JSON array of sections, each with a name and an array of dishes (each dish has name, price, description). Example format: [{"section":"Starters","dishes":[{"name":"Garlic Bread","price":"$5.9","description":"2 slices of sourdough bread, confit garlic, fresh herbs"}]}]` },
+                        { type: "image_url", image_url: { "url": `data:image/png;base64,${base64Image}` } }
+                    ]
+                }
+            ],
+            max_tokens: 2000,
+            temperature: 0.2
         });
 
-        // 4. Lookup dishes in Supabase
-        const dbExplanations = await lookupDishesInSupabase(allDishes, targetLanguage);
-
-        // 5. For missing dishes, use OpenAI and save to Supabase
-        const missingDishes = allDishes.filter(dish => !dbExplanations[dish.name]);
-        let aiExplanations = {};
-        if (missingDishes.length > 0) {
-            aiExplanations = await fetchAndSaveExplanationsFromOpenAI(missingDishes, targetLanguage);
+        const responseText = visionResponse.choices[0]?.message?.content?.trim();
+        let parsedSections;
+        try {
+            parsedSections = JSON.parse(responseText);
+        } catch (err) {
+            console.error('OpenAI JSON parse error:', err, responseText);
+            return {
+                statusCode: 500,
+                headers,
+                body: JSON.stringify({ success: false, error: 'Failed to parse menu from OpenAI response.' })
+            };
         }
 
-        // 6. Attach explanations to dishes
-        parsedSections.forEach(section => {
-            section.dishes.forEach(dish => {
-                dish.explanation = dbExplanations[dish.name] || aiExplanations[dish.name] || '';
-            });
-        });
+        // 4. Store scan in Supabase
+        const { error: scanError } = await supabase.from('menu_scans').insert([
+            {
+                user_id: userId,
+                tier: userTier,
+                menu_json: parsedSections,
+                created_at: new Date().toISOString()
+            }
+        ]);
+        if (scanError) {
+            console.error('Supabase scan insert error:', scanError);
+        }
 
-        // 7. Save scan to DB (optional, you can keep your existing logic)
-        // (You may want to update this to use the new structure if needed)
-
-        // 8. Return results
+        // 5. Return structured menu
         return {
             statusCode: 200,
             headers,
@@ -339,40 +143,22 @@ exports.handler = async (event, context) => {
                 success: true,
                 data: {
                     sections: parsedSections,
-                    sourceLanguage: visionResult.detectedLanguages || 'unknown',
-                    targetLanguage: targetLanguage,
-                    processingTime: Date.now() - startTime,
-                    dishesFound: allDishes.length
+                    userTier,
+                    processingTime: Date.now() - startTime
                 }
             })
         };
 
     } catch (error) {
-        console.error('❌ Detailed error:', error);
-        console.error('❌ Error stack:', error.stack);
-        console.error('❌ Error message:', error.message);
-        
-        const processingTime = Date.now() - startTime;
-        let errorMessage = 'Menu processing failed. Please try again.';
-        let statusCode = 500;
-
-        if (error.message && error.message.includes('No text detected')) {
-            errorMessage = 'No text found in image. Please try a clearer photo.';
-            statusCode = 400;
-        } else if (error.message && (error.message.includes('quota') || error.message.includes('rate limit'))) {
-            errorMessage = 'Service temporarily busy. Please try again in a moment.';
-            statusCode = 503;
-        }
-
+        console.error('❌ scan-menu error:', error);
         return {
-            statusCode,
+            statusCode: 500,
             headers,
             body: JSON.stringify({
                 success: false,
-                error: errorMessage,
-                processingTime,
-                timestamp: new Date().toISOString(),
-                debugInfo: error.message
+                error: error.message,
+                processingTime: Date.now() - startTime,
+                timestamp: new Date().toISOString()
             })
         };
     }

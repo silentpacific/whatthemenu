@@ -1,0 +1,101 @@
+table_schema,table_name,column_name,data_type
+auth,audit_log_entries,ip_address,character varying
+auth,audit_log_entries,created_at,timestamp with time zone
+auth,audit_log_entries,instance_id,uuid
+auth,audit_log_entries,payload,json
+auth,audit_log_entries,id,uuid
+auth,flow_state,created_at,timestamp with time zone
+auth,flow_state,provider_type,text
+auth,flow_state,user_id,uuid
+auth,flow_state,provider_access_token,text
+auth,flow_state,auth_code,text
+auth,flow_state,updated_at,timestamp with time zone
+auth,flow_state,auth_code_issued_at,timestamp with time zone
+auth,flow_state,code_challenge_method,USER-DEFINED
+auth,flow_state,code_challenge,text
+auth,flow_state,provider_refresh_token,text
+auth,flow_state,id,uuid
+auth,flow_state,authentication_method,text
+auth,identities,user_id,uuid
+auth,identities,identity_data,jsonb
+auth,identities,created_at,timestamp with time zone
+auth,identities,email,text
+auth,identities,updated_at,timestamp with time zone
+auth,identities,provider_id,text
+auth,identities,last_sign_in_at,timestamp with time zone
+auth,identities,provider,text
+auth,identities,id,uuid
+auth,instances,created_at,timestamp with time zone
+auth,instances,id,uuid
+auth,instances,uuid,uuid
+auth,instances,updated_at,timestamp with time zone
+auth,instances,raw_base_config,text
+auth,mfa_amr_claims,created_at,timestamp with time zone
+auth,mfa_amr_claims,authentication_method,text
+auth,mfa_amr_claims,id,uuid
+auth,mfa_amr_claims,updated_at,timestamp with time zone
+auth,mfa_amr_claims,session_id,uuid
+auth,mfa_challenges,ip_address,inet
+auth,mfa_challenges,id,uuid
+auth,mfa_challenges,web_authn_session_data,jsonb
+auth,mfa_challenges,verified_at,timestamp with time zone
+auth,mfa_challenges,created_at,timestamp with time zone
+auth,mfa_challenges,factor_id,uuid
+auth,mfa_challenges,otp_code,text
+auth,mfa_factors,user_id,uuid
+auth,mfa_factors,id,uuid
+auth,mfa_factors,web_authn_credential,jsonb
+auth,mfa_factors,web_authn_aaguid,uuid
+auth,mfa_factors,last_challenged_at,timestamp with time zone
+auth,mfa_factors,updated_at,timestamp with time zone
+auth,mfa_factors,created_at,timestamp with time zone
+auth,mfa_factors,status,USER-DEFINED
+auth,mfa_factors,factor_type,USER-DEFINED
+auth,mfa_factors,secret,text
+auth,mfa_factors,phone,text
+auth,mfa_factors,friendly_name,text
+auth,one_time_tokens,token_type,USER-DEFINED
+auth,one_time_tokens,user_id,uuid
+auth,one_time_tokens,id,uuid
+auth,one_time_tokens,relates_to,text
+auth,one_time_tokens,token_hash,text
+auth,one_time_tokens,updated_at,timestamp without time zone
+auth,one_time_tokens,created_at,timestamp without time zone
+auth,refresh_tokens,instance_id,uuid
+auth,refresh_tokens,parent,character varying
+auth,refresh_tokens,id,bigint
+auth,refresh_tokens,revoked,boolean
+auth,refresh_tokens,created_at,timestamp with time zone
+auth,refresh_tokens,updated_at,timestamp with time zone
+auth,refresh_tokens,token,character varying
+auth,refresh_tokens,session_id,uuid
+auth,refresh_tokens,user_id,character varying
+auth,saml_providers,created_at,timestamp with time zone
+auth,saml_providers,attribute_mapping,jsonb
+auth,saml_providers,sso_provider_id,uuid
+auth,saml_providers,id,uuid
+auth,saml_providers,entity_id,text
+auth,saml_providers,metadata_xml,text
+auth,saml_providers,metadata_url,text
+auth,saml_providers,name_id_format,text
+auth,saml_providers,updated_at,timestamp with time zone
+auth,saml_relay_states,flow_state_id,uuid
+auth,saml_relay_states,updated_at,timestamp with time zone
+auth,saml_relay_states,created_at,timestamp with time zone
+auth,saml_relay_states,id,uuid
+auth,saml_relay_states,sso_provider_id,uuid
+auth,saml_relay_states,for_email,text
+auth,saml_relay_states,redirect_to,text
+auth,saml_relay_states,request_id,text
+auth,schema_migrations,version,character varying
+auth,sessions,refreshed_at,timestamp without time zone
+auth,sessions,ip,inet
+auth,sessions,not_after,timestamp with time zone
+auth,sessions,updated_at,timestamp with time zone
+auth,sessions,factor_id,uuid
+auth,sessions,aal,USER-DEFINED
+auth,sessions,id,uuid
+auth,sessions,user_id,uuid
+auth,sessions,created_at,timestamp with time zone
+auth,sessions,user_agent,text
+auth,sessions,tag,text

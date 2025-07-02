@@ -2,584 +2,18 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <title>Menu Scan Results</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Menu Results - What The Menu?</title>
-    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: 'Nunito', sans-serif;
-            background: #f8fafc;
-            color: #334155;
-            line-height: 1.6;
-            margin: 0;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-        
-        /* Header - Your actual header styles */
-        .header {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(20px);
-            border-bottom: 1px solid rgba(8, 145, 178, 0.1);
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            z-index: 1000;
-            transition: all 0.3s ease;
-        }
-        
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 1.5rem;
-        }
-        
-        .header-content {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 1rem 0;
-            min-height: 80px;
-        }
-        
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            text-decoration: none;
-            transition: transform 0.3s ease;
-        }
-        
-        .logo:hover {
-            transform: scale(1.02);
-        }
-        
-        .logo-icon {
-            width: 48px;
-            height: 48px;
-            background: linear-gradient(135deg, #0891b2, #06b6d4);
-            border-radius: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.8rem;
-            box-shadow: 0 4px 12px rgba(8, 145, 178, 0.3);
-        }
-        
-        .logo-text {
-            font-family: 'Nunito', sans-serif;
-            font-size: 1.6rem;
-            font-weight: 900;
-            color: #0891b2;
-            letter-spacing: -0.5px;
-        }
-        
-        .nav {
-            display: none; /* Hidden on mobile */
-        }
-        
-        .header-actions {
-            display: flex;
-            gap: 1rem;
-            align-items: center;
-        }
-        
-        .user-icon {
-            width: 40px;
-            height: 40px;
-            background: #f1f5f9;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.2rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-decoration: none;
-            color: inherit;
-        }
-        
-        .user-icon:hover {
-            background: #e2e8f0;
-            transform: scale(1.05);
-            border: 2px solid #0891b2;
-        }
-        
-        /* Main Content */
-        .main-content {
-            flex: 1;
-            padding-top: 80px; /* Account for fixed header */
-            display: flex;
-            flex-direction: column;
-        }
-        
-        /* Page Title */
-        .page-title-section {
-            background: white;
-            padding: 1.5rem;
-            border-bottom: 1px solid #e2e8f0;
-        }
-        
-        .page-title {
-            font-size: 1.5rem;
-            font-weight: 800;
-            color: #1e293b;
-            text-align: center;
-            margin: 0;
-        }
-        
-        /* Loading State */
-        .loading-container {
-            padding: 3rem;
-            text-align: center;
-        }
-        
-        .spinner {
-            width: 40px;
-            height: 40px;
-            border: 4px solid #f3f4f6;
-            border-top: 4px solid #0891b2;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 1rem;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        /* Error State */
-        .error-container {
-            padding: 3rem;
-            text-align: center;
-            background: white;
-            margin: 1rem;
-            border-radius: 12px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        }
-        
-        .error-icon {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-        }
-        
-        .error-title {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: #dc2626;
-            margin-bottom: 1rem;
-        }
-        
-        .error-message {
-            color: #64748b;
-            margin-bottom: 2rem;
-        }
-        
-        .back-button {
-            background: #0891b2;
-            color: white;
-            border: none;
-            padding: 0.75rem 1.5rem;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            text-decoration: none;
-            display: inline-block;
-        }
-        
-        .back-button:hover {
-            background: #0e7490;
-        }
-        
-        /* Results Container */
-        .results-container {
-            flex: 1;
-            padding: 1rem;
-        }
-        
-        .results-header {
-            background: white;
-            padding: 1.5rem;
-            border-radius: 12px;
-            margin-bottom: 1rem;
-            text-align: center;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        }
-        
-        .results-stats {
-            display: flex;
-            justify-content: center;
-            gap: 2rem;
-            margin-top: 1rem;
-            font-size: 0.875rem;
-            color: #64748b;
-        }
-        
-        .stat-item {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        
-        .menu-section {
-            background: white;
-            border-radius: 12px;
-            margin-bottom: 1rem;
-            overflow: hidden;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        }
-        
-        .section-header {
-            background: #1e293b;
-            color: white;
-            padding: 1rem 1.25rem;
-            font-weight: 700;
-            font-size: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        
-        .dish-item {
-            border-bottom: 1px solid #f1f5f9;
-            transition: background-color 0.2s ease;
-        }
-        
-        .dish-item:last-child {
-            border-bottom: none;
-        }
-        
-        .dish-header {
-            padding: 1rem 1.25rem;
-            cursor: pointer;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: white;
-            transition: background-color 0.2s ease;
-        }
-        
-        .dish-header:hover {
-            background: #f8fafc;
-        }
-        
-        .dish-header.expanded {
-            background: #f0f9ff;
-            border-bottom: 1px solid #e0f2fe;
-        }
-        
-        .dish-info {
-            flex: 1;
-        }
-        
-        .dish-name {
-            font-weight: 700;
-            font-size: 1rem;
-            color: #1e293b;
-            margin-bottom: 0.25rem;
-        }
-        
-        .dish-original-desc {
-            font-size: 0.875rem;
-            color: #64748b;
-            font-style: italic;
-            line-height: 1.4;
-        }
-        
-        .dish-tags {
-            display: flex;
-            gap: 0.5rem;
-            margin-top: 0.5rem;
-        }
-        
-        .dish-tag {
-            background: #f1f5f9;
-            color: #64748b;
-            font-size: 0.75rem;
-            padding: 0.25rem 0.5rem;
-            border-radius: 12px;
-            font-weight: 500;
-        }
-        
-        .dish-tag.spicy {
-            background: #fef2f2;
-            color: #dc2626;
-        }
-        
-        .dish-tag.vegetarian {
-            background: #f0fdf4;
-            color: #16a34a;
-        }
-        
-        .dish-tag.vegan {
-            background: #ecfdf5;
-            color: #059669;
-        }
-        
-        .expand-icon {
-            background: #f1f5f9;
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.875rem;
-            color: #64748b;
-            transition: all 0.3s ease;
-            flex-shrink: 0;
-        }
-        
-        .dish-header.expanded .expand-icon {
-            background: #0891b2;
-            color: white;
-            transform: rotate(180deg);
-        }
-        
-        .dish-explanation {
-            display: none;
-            padding: 1rem 1.25rem;
-            background: #f0f9ff;
-            border-top: 1px solid #e0f2fe;
-            font-size: 0.875rem;
-            line-height: 1.6;
-            color: #1e293b;
-        }
-        
-        .dish-explanation.visible {
-            display: block;
-            animation: slideDown 0.3s ease-out;
-        }
-        
-        /* Page Actions Section at Bottom */
-        .page-actions-section {
-            background: white;
-            border-top: 1px solid #e2e8f0;
-            padding: 1.5rem;
-            margin-top: 1rem;
-        }
-        
-        .actions-title {
-            font-size: 1.25rem;
-            font-weight: 700;
-            color: #1e293b;
-            margin-bottom: 1rem;
-            text-align: center;
-        }
-        
-        .page-actions {
-            display: flex;
-            gap: 0.75rem;
-            justify-content: center;
-            margin-bottom: 1rem;
-        }
-        
-        .action-btn {
-            flex: 1;
-            max-width: 140px;
-            background: #f8fafc;
-            border: 2px solid #e2e8f0;
-            padding: 0.75rem 1rem;
-            border-radius: 12px;
-            font-family: 'Nunito', sans-serif;
-            font-weight: 600;
-            font-size: 0.875rem;
-            color: #64748b;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-        }
-        
-        .action-btn:hover {
-            border-color: #0891b2;
-            color: #0891b2;
-            background: rgba(8, 145, 178, 0.05);
-        }
-        
-        .action-btn.primary {
-            background: #0891b2;
-            border-color: #0891b2;
-            color: white;
-        }
-        
-        .action-btn.primary:hover {
-            background: #0e7490;
-            border-color: #0e7490;
-        }
-        
-        .scan-status {
-            text-align: center;
-            font-size: 0.875rem;
-            color: #64748b;
-        }
-        
-        .scan-status .scans-used {
-            color: #0891b2;
-            font-weight: 700;
-        }
-        
-        /* Footer - Exactly matching your index.html */
-        .site-footer {
-            background: #e2e8f0;
-            border-top: 1px solid rgba(8, 145, 178, 0.3);
-            margin-top: auto;
-        }
-        
-        .footer-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 3rem 1.5rem 2rem;
-        }
-        
-        .footer-content {
-            display: grid;
-            grid-template-columns: 2fr 1fr 1fr;
-            gap: 3rem;
-            margin-bottom: 2rem;
-        }
-        
-        .footer-logo-section {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-        }
-        
-        .footer-logo {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-        
-        .footer-logo-icon {
-            width: 40px;
-            height: 40px;
-            background: linear-gradient(135deg, #0891b2, #06b6d4);
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-            box-shadow: 0 4px 12px rgba(8, 145, 178, 0.3);
-        }
-        
-        .footer-logo-text {
-            font-family: 'Nunito', sans-serif;
-            font-size: 1.4rem;
-            font-weight: 900;
-            color: #0891b2;
-            letter-spacing: -0.5px;
-        }
-        
-        .footer-description {
-            font-size: 1rem;
-            color: #64748b;
-            line-height: 1.6;
-            max-width: 300px;
-            font-weight: 500;
-            margin: 0;
-        }
-        
-        .footer-section-title {
-            font-family: 'Nunito', sans-serif;
-            font-size: 1.1rem;
-            font-weight: 800;
-            color: #1e293b;
-            margin-bottom: 1rem;
-        }
-        
-        .footer-link {
-            color: #64748b;
-            text-decoration: none;
-            font-size: 0.95rem;
-            font-weight: 500;
-            padding: 0.25rem 0;
-            transition: color 0.3s ease;
-            display: block;
-        }
-        
-        .footer-link:hover {
-            color: #0891b2;
-        }
-        
-        .footer-bottom {
-            border-top: 1px solid #e2e8f0;
-            padding-top: 2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 0.9rem;
-            color: #64748b;
-        }
-        
-        .footer-copyright {
-            font-weight: 500;
-        }
-        
-        .footer-security {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-weight: 600;
-            color: #10b981;
-        }
-        
-        /* Mobile footer styles matching index.html */
-        @media (max-width: 768px) {
-            .footer-container {
-                padding: 1.5rem 1.5rem 1rem;
-            }
-            
-            .footer-content {
-                grid-template-columns: 1fr !important;
-                gap: 1.5rem;
-                text-align: center;
-                margin-bottom: 1rem;
-            }
-            
-            .footer-content > div {
-                margin-bottom: 0;
-            }
-            
-            .footer-bottom {
-                flex-direction: column !important;
-                gap: 0.75rem;
-                text-align: center;
-                padding-top: 1rem;
-            }
-            
-            .results-stats {
-                flex-direction: column;
-                gap: 0.5rem;
-            }
-        }
-        
-        /* Animations */
-        @keyframes slideDown {
-            from {
-                opacity: 0;
-                max-height: 0;
-            }
-            to {
-                opacity: 1;
-                max-height: 200px;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="styles/global.css">
+    <link rel="stylesheet" href="styles/header.css">
+    <link rel="stylesheet" href="styles/hero.css">
+    <link rel="stylesheet" href="styles/how-it-works.css">
+    <link rel="stylesheet" href="styles/social-proof.css">
+    <link rel="stylesheet" href="styles/pricing.css">
+    <link rel="stylesheet" href="styles/shared-footer.css">
+    <link rel="stylesheet" href="styles/modal.css">
 </head>
 <body>
-    <!-- Header -->
     <header class="header">
         <div class="container">
             <div class="header-content">
@@ -598,106 +32,42 @@
         </div>
     </header>
 
-    <!-- Main Content -->
-    <main class="main-content">
-        <!-- Page Title -->
-        <section class="page-title-section">
-            <h1 class="page-title">Menu Results</h1>
-        </section>
-
-        <!-- Loading State (initially shown) -->
-        <div id="loading-state" class="loading-container">
-            <div class="spinner"></div>
-            <h3>Loading your menu results...</h3>
-            <p style="color: #64748b; margin-top: 0.5rem;">Please wait a moment</p>
-        </div>
-
+    <main style="max-width: 800px; margin: 2rem auto; padding: 1rem;">
+        <h1>Menu Scan Results</h1>
         <div id="menu-sections"></div>
-
-        <!-- Error State (hidden by default) -->
-        <div id="error-state" class="error-container" style="display: none;">
-            <div class="error-icon">😕</div>
-            <h2 class="error-title">No Menu Data Found</h2>
-            <p class="error-message">It looks like there's no menu scan data available. Please try scanning a menu first.</p>
-            <a href="/" class="back-button">← Back to Home</a>
-        </div>
-
-        <!-- Results Header (hidden by default) -->
-        <div id="results-header" class="results-header" style="display: none;">
-            <h2 id="results-title">Your Menu Analysis</h2>
-            <div class="results-stats">
-                <div class="stat-item">
-                    <span>📊</span>
-                    <span>Found <strong id="dish-count">0</strong> dishes</span>
-                </div>
-                <div class="stat-item">
-                    <span>🌍</span>
-                    <span>Source: <strong id="source-language">Unknown</strong></span>
-                </div>
-                <div class="stat-item">
-                    <span>⚡</span>
-                    <span>Processed in <strong id="processing-time">0</strong>s</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Menu Results (hidden by default) -->
-        <section id="results-container" class="results-container" style="display: none;">
-            <!-- Dynamic content will be inserted here -->
-        </section>
-
-        <!-- Page Actions at Bottom (hidden by default) -->
-        <section id="page-actions" class="page-actions-section" style="display: none;">
-            <h2 class="actions-title">What's Next?</h2>
-            <div class="page-actions">
-                <button class="action-btn" onclick="goHome()">
-                    🏠 Home
-                </button>
-                <button class="action-btn primary" onclick="scanAnother()">
-                    📷 Scan Another
-                </button>
-            </div>
-            <div class="scan-status">
-                Scan complete! Ready for your next menu.
-            </div>
-        </section>
     </main>
 
-    <!-- Footer -->
-    <footer class="site-footer">
-        <div class="footer-container">
-            <div class="footer-content">
-                <div class="footer-logo-section">
-                    <div class="footer-logo">
-                        <div class="footer-logo-icon">🤔</div>
-                        <div class="footer-logo-text">What The Menu?</div>
+    <footer style="background: #e2e8f0; border-top: 1px solid rgba(8, 145, 178, 0.3); margin-top: auto;">
+        <div style="max-width: 1200px; margin: 0 auto; padding: 3rem 1.5rem 2rem;">
+            <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 3rem; margin-bottom: 2rem;">
+                <div style="display: flex; flex-direction: column; gap: 1rem;">
+                    <div style="display: flex; align-items: center; gap: 0.75rem;">
+                        <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #0891b2, #06b6d4); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; box-shadow: 0 4px 12px rgba(8, 145, 178, 0.3);">🤔</div>
+                        <div style="font-family: 'Nunito', sans-serif; font-size: 1.4rem; font-weight: 900; color: #0891b2; letter-spacing: -0.5px;">What The Menu?</div>
                     </div>
-                    <p class="footer-description">
+                    <p style="font-size: 1rem; color: #64748b; line-height: 1.6; max-width: 300px; font-weight: 500; margin: 0;">
                         Never wonder what's on the menu again.
                     </p>
                 </div>
-                
                 <div>
-                    <h3 class="footer-section-title">Legal</h3>
-                    <a href="privacy.html" class="footer-link">Privacy Policy</a>
-                    <a href="terms.html" class="footer-link">Terms of Service</a>
-                    <a href="contact.html" class="footer-link">Contact</a>
+                    <h3 style="font-family: 'Nunito', sans-serif; font-size: 1.1rem; font-weight: 800; color: #1e293b; margin-bottom: 1rem;">Legal</h3>
+                    <a href="privacy.html" style="color: #64748b; text-decoration: none; font-size: 0.95rem; font-weight: 500; padding: 0.25rem 0; transition: color 0.3s ease; display: block;">Privacy Policy</a>
+                    <a href="terms.html" style="color: #64748b; text-decoration: none; font-size: 0.95rem; font-weight: 500; padding: 0.25rem 0; transition: color 0.3s ease; display: block;">Terms of Service</a>
+                    <a href="contact.html" style="color: #64748b; text-decoration: none; font-size: 0.95rem; font-weight: 500; padding: 0.25rem 0; transition: color 0.3s ease; display: block;">Contact</a>
                 </div>
-                
                 <div>
-                    <h3 class="footer-section-title">Languages</h3>
+                    <h3 style="font-family: 'Nunito', sans-serif; font-size: 1.1rem; font-weight: 800; color: #1e293b; margin-bottom: 1rem;">Languages</h3>
                     <div style="margin: 1rem 0;">
                         <span style="color: #64748b; font-size: 0.9rem; line-height: 1.5; font-weight: 500;">English, Spanish, French, Italian, German, Japanese, Korean, Chinese</span>
                     </div>
                     <p style="color: #64748b; font-size: 0.95rem; font-weight: 500; margin: 0;">+ 42 more languages</p>
                 </div>
             </div>
-            
-            <div class="footer-bottom">
-                <div class="footer-copyright">
+            <div style="border-top: 1px solid #e2e8f0; padding-top: 2rem; display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; color: #64748b;">
+                <div style="font-weight: 500;">
                     © 2025 What The Menu? All rights reserved.
                 </div>
-                <div class="footer-security">
+                <div style="display: flex; align-items: center; gap: 0.5rem; font-weight: 600; color: #10b981;">
                     🔒 Secure payments by Stripe
                 </div>
             </div>
@@ -705,270 +75,82 @@
     </footer>
 
     <script>
-        // Results page functionality - loads real data from sessionStorage
-        class ResultsPage {
-            constructor() {
-                this.resultsData = null;
-                this.init();
-            }
+    // Helper to get userId and scanId from sessionStorage
+    function getUserAndScanId() {
+        return {
+            userId: sessionStorage.getItem('userId'),
+            scanId: sessionStorage.getItem('scanId')
+        };
+    }
 
-            init() {
-                console.log('🚀 Results page initializing...');
-                
-                // Small delay to show loading state
-                setTimeout(() => {
-                    this.loadMenuData();
-                }, 500);
-            }
-
-            loadMenuData() {
-                console.log('📊 Loading menu data from sessionStorage...');
-                
-                // Get data from sessionStorage
-                const resultsJson = sessionStorage.getItem('menuResults');
-                
-                if (!resultsJson) {
-                    console.log('❌ No menu data found in sessionStorage');
-                    this.showError();
-                    return;
-                }
-
-                try {
-                    this.resultsData = JSON.parse(resultsJson);
-                    console.log('✅ Menu data loaded:', this.resultsData);
-                    
-                    // Validate data structure
-                    if (!this.resultsData.sections || this.resultsData.sections.length === 0) {
-                        console.log('❌ Invalid data structure - no sections found');
-                        this.showError('Invalid menu data structure');
-                        return;
-                    }
-                    
-                    this.showResults();
-                    
-                } catch (error) {
-                    console.error('❌ Error parsing menu data:', error);
-                    this.showError('Failed to load menu data');
-                }
-            }
-
-            showError(message = null) {
-                console.log('❌ Showing error state');
-                
-                document.getElementById('loading-state').style.display = 'none';
-                document.getElementById('error-state').style.display = 'block';
-                
-                if (message) {
-                    document.querySelector('.error-message').textContent = message;
-                }
-            }
-
-            showResults() {
-                console.log('✅ Showing results');
-                
-                // Hide loading state
-                document.getElementById('loading-state').style.display = 'none';
-                
-                // Update header stats
-                this.updateResultsHeader();
-                
-                // Render sections
-                this.renderSections();
-                
-                // Show all result elements
-                document.getElementById('results-header').style.display = 'block';
-                document.getElementById('results-container').style.display = 'block';
-                document.getElementById('page-actions').style.display = 'block';
-            }
-
-            updateResultsHeader() {
-                const dishCount = this.resultsData.sections.reduce((total, section) => 
-                    total + (section.dishes ? section.dishes.length : 0), 0
-                );
-                
-                document.getElementById('dish-count').textContent = dishCount;
-                document.getElementById('source-language').textContent = 
-                    this.resultsData.sourceLanguage || 'Unknown';
-                document.getElementById('processing-time').textContent = 
-                    Math.round((this.resultsData.processingTime || 0) / 1000);
-            }
-
-            renderSections() {
-                const container = document.getElementById('results-container');
-                container.innerHTML = '';
-
-                this.resultsData.sections.forEach((section, sectionIndex) => {
-                    const sectionElement = this.createSectionElement(section, sectionIndex);
-                    container.appendChild(sectionElement);
-                });
-            }
-
-            createSectionElement(section, sectionIndex) {
-                const sectionDiv = document.createElement('div');
-                sectionDiv.className = 'menu-section';
-
-                // Section header
-                const headerDiv = document.createElement('div');
-                headerDiv.className = 'section-header';
-                headerDiv.innerHTML = `${section.emoji || '🍽️'} ${section.name}`;
-                sectionDiv.appendChild(headerDiv);
-
-                // Add dishes
-                if (section.dishes && section.dishes.length > 0) {
-                    section.dishes.forEach((dish, dishIndex) => {
-                        const dishElement = this.createDishElement(dish, sectionIndex, dishIndex);
-                        sectionDiv.appendChild(dishElement);
-                    });
-                } else {
-                    // No dishes in this section
-                    const noDishesDiv = document.createElement('div');
-                    noDishesDiv.style.padding = '1rem 1.25rem';
-                    noDishesDiv.style.color = '#64748b';
-                    noDishesDiv.style.fontStyle = 'italic';
-                    noDishesDiv.textContent = 'No dishes found in this section';
-                    sectionDiv.appendChild(noDishesDiv);
-                }
-
-                return sectionDiv;
-            }
-
-            createDishElement(dish, sectionIndex, dishIndex) {
-                const dishDiv = document.createElement('div');
-                dishDiv.className = 'dish-item';
-
-                // Dish header
-                const headerDiv = document.createElement('div');
-                headerDiv.className = 'dish-header';
-                headerDiv.onclick = () => this.toggleExplanation(headerDiv);
-
-                const dishInfoDiv = document.createElement('div');
-                dishInfoDiv.className = 'dish-info';
-
-                const nameDiv = document.createElement('div');
-                nameDiv.className = 'dish-name';
-                nameDiv.textContent = dish.name || 'Unnamed Dish';
-
-                const descDiv = document.createElement('div');
-                descDiv.className = 'dish-original-desc';
-                descDiv.textContent = dish.originalDescription || dish.description || '';
-
-                // Add tags
-                const tagsDiv = this.createTagsElement(dish);
-
-                dishInfoDiv.appendChild(nameDiv);
-                dishInfoDiv.appendChild(descDiv);
-                dishInfoDiv.appendChild(tagsDiv);
-
-                const expandIcon = document.createElement('div');
-                expandIcon.className = 'expand-icon';
-                expandIcon.textContent = '▼';
-
-                headerDiv.appendChild(dishInfoDiv);
-                headerDiv.appendChild(expandIcon);
-
-                // Dish explanation
-                const explanationDiv = document.createElement('div');
-                explanationDiv.className = 'dish-explanation';
-                explanationDiv.textContent = dish.aiExplanation || dish.explanation || 'No explanation available';
-
-                dishDiv.appendChild(headerDiv);
-                dishDiv.appendChild(explanationDiv);
-
-                return dishDiv;
-            }
-
-            createTagsElement(dish) {
-                const tagsDiv = document.createElement('div');
-                tagsDiv.className = 'dish-tags';
-
-                const tags = [];
-                
-                if (dish.isSpicy) tags.push({ text: '🌶️ Spicy', class: 'spicy' });
-                if (dish.isVegetarian) tags.push({ text: '🥬 Vegetarian', class: 'vegetarian' });
-                if (dish.isVegan) tags.push({ text: '🌱 Vegan', class: 'vegan' });
-                
-                // Add allergen tags
-                if (dish.allergens && dish.allergens.length > 0) {
-                    dish.allergens.forEach(allergen => {
-                        tags.push({ text: `⚠️ ${allergen}`, class: 'allergen' });
-                    });
-                }
-
-                tags.forEach(tag => {
-                    const tagSpan = document.createElement('span');
-                    tagSpan.className = `dish-tag ${tag.class}`;
-                    tagSpan.textContent = tag.text;
-                    tagsDiv.appendChild(tagSpan);
-                });
-
-                return tagsDiv;
-            }
-
-            toggleExplanation(headerElement) {
-                const explanation = headerElement.nextElementSibling;
-                const isExpanded = headerElement.classList.contains('expanded');
-                
-                if (isExpanded) {
-                    // Collapse
-                    headerElement.classList.remove('expanded');
-                    explanation.classList.remove('visible');
-                } else {
-                    // Expand
-                    headerElement.classList.add('expanded');
-                    explanation.classList.add('visible');
-                }
-            }
-        }
-
-        // Action functions
-        function goHome() {
-            window.location.href = '/';
-        }
-
-        function scanAnother() {
-            // Clear the current results
-            sessionStorage.removeItem('menuResults');
-            window.location.href = '/';
-        }
-
-        // Initialize when page loads
-        document.addEventListener('DOMContentLoaded', () => {
-            window.resultsPage = new ResultsPage();
+    // Render the menu and set up click handlers
+    function renderMenu(sections, userId, scanId) {
+        const menuContainer = document.getElementById('menu-sections');
+        menuContainer.innerHTML = '';
+        sections.forEach(section => {
+            const sectionDiv = document.createElement('div');
+            sectionDiv.innerHTML = `<h3>${section.section || section.name}</h3><ul></ul>`;
+            const ul = sectionDiv.querySelector('ul');
+            section.dishes.forEach(dish => {
+                ul.innerHTML += `
+                    <li>
+                        <span class="dish-name" 
+                              data-dish-name="${dish.name}" 
+                              data-dish-desc="${dish.description || ''}"
+                              style="cursor:pointer; color:#0891b2; text-decoration:underline;">
+                            ${dish.name}
+                        </span>
+                        <span class="dish-explanation" style="margin-left:10px; color:#64748b;"></span>
+                    </li>
+                `;
+            });
+            menuContainer.appendChild(sectionDiv);
         });
-    </script>
+        setupDishClickHandlers(userId, scanId);
+    }
 
-<script src="js/main.js"></script>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Get parsed menu from sessionStorage
-    const menuResults = JSON.parse(sessionStorage.getItem('menuResults') || '{}');
-    const sections = menuResults.sections || [];
-    const menuContainer = document.getElementById('menu-sections');
-    if (!menuContainer) return;
+    // Click handler for dish explanations
+    function setupDishClickHandlers(userId, scanId) {
+        document.querySelectorAll('.dish-name').forEach(el => {
+            el.addEventListener('click', async function() {
+                const dishName = this.dataset.dishName;
+                const dishDesc = this.dataset.dishDesc || '';
+                const explanationEl = this.nextElementSibling;
 
-    menuContainer.innerHTML = '';
-    sections.forEach(section => {
-        const sectionDiv = document.createElement('div');
-        sectionDiv.innerHTML = `<h3>${section.name}</h3><ul></ul>`;
-        const ul = sectionDiv.querySelector('ul');
-        section.dishes.forEach(dish => {
-            ul.innerHTML += `
-                <li>
-                    <span class="dish-name" 
-                          data-dish-name="${dish.name}" 
-                          data-dish-desc="${dish.description || ''}"
-                          style="cursor:pointer; color:#0891b2; text-decoration:underline;">
-                        ${dish.name}
-                    </span>
-                    <span class="dish-explanation" style="margin-left:10px; color:#64748b;"></span>
-                </li>
-            `;
+                explanationEl.textContent = 'Loading explanation...';
+
+                const response = await fetch('/.netlify/functions/get-dish-explanation', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: dishName,
+                        description: dishDesc,
+                        userId: userId,
+                        scanId: scanId
+                    })
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    explanationEl.textContent = result.explanation;
+                } else {
+                    explanationEl.textContent = result.error || 'Could not fetch explanation.';
+                }
+            });
         });
-        menuContainer.appendChild(sectionDiv);
+    }
+
+    // On page load, render the menu
+    document.addEventListener('DOMContentLoaded', function() {
+        const menuResults = JSON.parse(sessionStorage.getItem('menuResults') || '{}');
+        const { userId, scanId } = getUserAndScanId();
+        const sections = menuResults.sections || [];
+        if (!userId || !scanId) {
+            document.getElementById('menu-sections').innerHTML = '<p style="color:red;">User or scan information missing. Please rescan your menu.</p>';
+            return;
+        }
+        renderMenu(sections, userId, scanId);
     });
-    setupDishClickHandlers();
-});
-</script>
-
+    </script>
 </body>
 </html>
