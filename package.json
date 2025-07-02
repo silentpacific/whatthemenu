@@ -25,6 +25,7 @@
     "netlify-lambda": "^0.4.0",
     "node-fetch": "^2.6.7",
     "openai": "^4.104.0",
+    "sharp": "^0.34.2",
     "stripe": "^14.7.0"
   },
   "devDependencies": {

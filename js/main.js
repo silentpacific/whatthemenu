@@ -1,5 +1,24 @@
 // js/main.js - Cleaned up version
 
+function resizeImage(file, maxWidth = 1024) {
+  return new Promise((resolve) => {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+    
+    img.onload = () => {
+      const ratio = Math.min(maxWidth / img.width, maxWidth / img.height);
+      canvas.width = img.width * ratio;
+      canvas.height = img.height * ratio;
+      
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      resolve(canvas.toDataURL('image/jpeg', 0.7));
+    };
+    
+    img.src = URL.createObjectURL(file);
+  });
+}
+
 class MenuScanner {
     constructor() {
         this.currentFile = null;
