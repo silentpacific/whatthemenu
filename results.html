@@ -612,6 +612,8 @@
             <p style="color: #64748b; margin-top: 0.5rem;">Please wait a moment</p>
         </div>
 
+        <div id="menu-sections"></div>
+
         <!-- Error State (hidden by default) -->
         <div id="error-state" class="error-container" style="display: none;">
             <div class="error-icon">😕</div>
@@ -934,5 +936,39 @@
             window.resultsPage = new ResultsPage();
         });
     </script>
+
+<script src="js/main.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Get parsed menu from sessionStorage
+    const menuResults = JSON.parse(sessionStorage.getItem('menuResults') || '{}');
+    const sections = menuResults.sections || [];
+    const menuContainer = document.getElementById('menu-sections');
+    if (!menuContainer) return;
+
+    menuContainer.innerHTML = '';
+    sections.forEach(section => {
+        const sectionDiv = document.createElement('div');
+        sectionDiv.innerHTML = `<h3>${section.name}</h3><ul></ul>`;
+        const ul = sectionDiv.querySelector('ul');
+        section.dishes.forEach(dish => {
+            ul.innerHTML += `
+                <li>
+                    <span class="dish-name" 
+                          data-dish-name="${dish.name}" 
+                          data-dish-desc="${dish.description || ''}"
+                          style="cursor:pointer; color:#0891b2; text-decoration:underline;">
+                        ${dish.name}
+                    </span>
+                    <span class="dish-explanation" style="margin-left:10px; color:#64748b;"></span>
+                </li>
+            `;
+        });
+        menuContainer.appendChild(sectionDiv);
+    });
+    setupDishClickHandlers();
+});
+</script>
+
 </body>
 </html>

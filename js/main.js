@@ -331,3 +331,30 @@ function scrollToUpload() {
         uploadArea.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 }
+
+function setupDishClickHandlers() {
+    document.querySelectorAll('.dish-name').forEach(el => {
+        el.addEventListener('click', async function() {
+            const dishName = this.dataset.dishName;
+            const dishDesc = this.dataset.dishDesc || '';
+            const explanationEl = this.nextElementSibling;
+
+            // Show loading state
+            explanationEl.textContent = 'Loading explanation...';
+
+            // Fetch explanation from Netlify function
+            const response = await fetch('/.netlify/functions/get-dish-explanation', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: dishName, description: dishDesc })
+            });
+            const result = await response.json();
+
+            if (result.success) {
+                explanationEl.textContent = result.explanation;
+            } else {
+                explanationEl.textContent = 'Could not fetch explanation.';
+            }
+        });
+    });
+}
