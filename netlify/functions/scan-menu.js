@@ -143,7 +143,7 @@ async function lookupDishesInSupabase(dishes, language = 'en') {
 async function fetchAndSaveExplanationsFromOpenAI(dishes, language = 'en') {
     const map = {};
     for (const dish of dishes) {
-        const prompt = `Explain the following dish for a menu in a friendly, concise way (max 60 words). Include dietary notes if available.\n\nDish: ${dish.name}\nDescription: ${dish.description}\nDietary: ${dish.dietary.join(', ')}`;
+        const prompt = `Explain the following dish for a menu in a friendly, concise way (max 60 words). Include dietary notes if available.\n\nDish: ${dish.name}\nDescription: ${dish.description}\nDietary: ${(dish.dietary || []).join(', ')}`;
         try {
             const completion = await openai.chat.completions.create({
                 model: 'gpt-4o',
