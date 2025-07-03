@@ -205,20 +205,6 @@ class MenuScanner {
     }
 
     async callNetlifyFunction(file) {
-        // Initialize Tesseract scanner if not already done
-        if (!window.tesseractScanner) {
-            try {
-                window.tesseractScanner = new TesseractScanner();
-                console.log('🔧 TesseractScanner created');
-            } catch (error) {
-                console.error('❌ Failed to create TesseractScanner:', error);
-                return {
-                    success: false,
-                    error: 'Failed to initialize OCR system: ' + error.message
-                };
-            }
-        }
-
         try {
             console.log('📁 Processing file:', file.name, 'Size:', file.size, 'Type:', file.type);
             
@@ -236,29 +222,12 @@ class MenuScanner {
                 `;
             }
             
-            // Use Tesseract.js for OCR
-            const ocrResult = await window.tesseractScanner.scanImage(file);
-            
-            if (!ocrResult.success) {
-                console.log('⚠️ Tesseract.js failed, trying OCR.space fallback...');
-                
-                // Try OCR.space fallback
-                if (!window.ocrFallback) {
-                    window.ocrFallback = new OCRFallback();
-                }
-                
-                const fallbackResult = await window.ocrFallback.scanImage(file);
-                
-                if (!fallbackResult.success) {
-                    throw new Error(`OCR failed: ${ocrResult.error}. Fallback also failed: ${fallbackResult.error}`);
-                }
-                
-                console.log('✅ OCR.space fallback successful');
-                return this.processOCRResult(fallbackResult, userId, sessionId);
-            }
-
-            console.log('✅ OCR successful, enriching with descriptions...');
-            return this.processOCRResult(ocrResult, userId, sessionId);
+            // TODO: Implement Google Vision API OCR here
+            // For now, return a placeholder response
+            return {
+                success: false,
+                error: 'OCR processing not yet implemented. Google Vision API integration coming soon.'
+            };
 
         } catch (error) {
             console.error('❌ Scan failed:', error);
@@ -283,47 +252,6 @@ class MenuScanner {
                 error: error.message || 'Failed to process image'
             };
         }
-    }
-
-    async processOCRResult(ocrResult, userId, sessionId) {
-        // Get userId from Supabase Auth (if available)
-        if (!userId && window.supabase) {
-            try {
-                const { data: { user } } = await supabase.auth.getUser();
-                userId = user?.id || null;
-            } catch (e) {
-                userId = null;
-            }
-        }
-
-        // Always use a sessionId for anonymous users
-        if (!sessionId) {
-            sessionId = sessionStorage.getItem('sessionId');
-            if (!sessionId) {
-                sessionId = 'sess_' + Math.random().toString(36).substr(2, 16) + Date.now().toString(36);
-                sessionStorage.setItem('sessionId', sessionId);
-            }
-        }
-
-        // Query Supabase for dish descriptions
-        const enrichedSections = await this.enrichWithDescriptions(ocrResult.data.sections);
-
-        // Store scan in Supabase
-        const scanResult = await this.storeScan(enrichedSections, userId, sessionId);
-
-        return {
-            success: true,
-            data: {
-                sections: enrichedSections,
-                userTier: 'free', // For now, assume free tier
-                userId: userId || '',
-                scanId: scanResult.scanId || 'temp_' + Date.now(),
-                processingTime: Date.now() - this.scanStartTime,
-                rawText: ocrResult.data.rawText,
-                confidence: ocrResult.data.confidence,
-                source: ocrResult.data.source || 'tesseract'
-            }
-        };
     }
 
     async enrichWithDescriptions(sections) {

@@ -427,60 +427,13 @@ function handleScanClick() {
             processImage(file);
         }
         
-        // Process the image with Tesseract.js
+        // Process the image (placeholder for Google Vision API)
         async function processImage(file) {
             try {
-                // Initialize Tesseract scanner if not already done
-                if (!window.tesseractScanner) {
-                    window.tesseractScanner = new TesseractScanner();
-                }
-
-                // Use Tesseract.js for OCR
-                const ocrResult = await window.tesseractScanner.scanImage(file);
-                
-                if (!ocrResult.success) {
-                    throw new Error(ocrResult.error || 'OCR processing failed');
-                }
-
-                // Get userId from Supabase Auth (if available)
-                let userId = null;
-                try {
-                    const { data: { user } } = await supabase.auth.getUser();
-                    userId = user?.id || null;
-                } catch (e) {
-                    userId = null;
-                }
-
-                // Always use a sessionId for anonymous users
-                let sessionId = sessionStorage.getItem('sessionId');
-                if (!sessionId) {
-                    sessionId = 'sess_' + Math.random().toString(36).substr(2, 16) + Date.now().toString(36);
-                    sessionStorage.setItem('sessionId', sessionId);
-                }
-
-                // Query Supabase for dish descriptions
-                const enrichedSections = await enrichWithDescriptions(ocrResult.data.sections);
-
-                // Store scan in Supabase
-                const scanResult = await storeScan(enrichedSections, userId, sessionId);
-
-                // Store results in session storage for results page
-                const resultData = {
-                    sections: enrichedSections,
-                    userTier: 'free',
-                    userId: userId || '',
-                    scanId: scanResult.scanId || 'temp_' + Date.now(),
-                    processingTime: Date.now() - Date.now(), // Will be calculated properly
-                    rawText: ocrResult.data.rawText,
-                    confidence: ocrResult.data.confidence
-                };
-
-                sessionStorage.setItem('menuResults', JSON.stringify(resultData));
-                sessionStorage.setItem('userId', resultData.userId);
-                sessionStorage.setItem('scanId', resultData.scanId);
-
-                // Redirect to results page
-                window.location.href = 'results.html';
+                // TODO: Implement Google Vision API OCR here
+                // For now, show a placeholder message
+                showProcessing(false);
+                alert('OCR processing not yet implemented. Google Vision API integration coming soon.');
                 
             } catch (error) {
                 console.error('Processing error:', error);
@@ -596,8 +549,6 @@ function handleScanClick() {
         });
     </script>
     
-    <!-- Tesseract.js for OCR -->
-    <script src="https://unpkg.com/tesseract.js@v4.1.1/dist/tesseract.min.js"></script>
-    <script src="js/tesseract-scanner.js"></script>
+
 </body>
 </html>
