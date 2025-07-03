@@ -222,12 +222,50 @@ class MenuScanner {
                 `;
             }
             
-            // TODO: Implement Google Vision API OCR here
-            // For now, return a placeholder response
-            return {
-                success: false,
-                error: 'OCR processing not yet implemented. Google Vision API integration coming soon.'
-            };
+            // Convert file to base64
+            const base64Image = await this.fileToBase64(file);
+            
+            // Get user and session IDs
+            let userId = null;
+            let sessionId = sessionStorage.getItem('sessionId');
+            
+            // Try to get userId from Supabase Auth if available
+            if (window.supabase) {
+                try {
+                    const { data: { user } } = await window.supabase.auth.getUser();
+                    userId = user?.id || null;
+                } catch (e) {
+                    console.log('No authenticated user, using session ID');
+                }
+            }
+            
+            // Create session ID if not exists
+            if (!sessionId) {
+                sessionId = 'sess_' + Math.random().toString(36).substr(2, 16) + Date.now().toString(36);
+                sessionStorage.setItem('sessionId', sessionId);
+            }
+            
+            // Call the Netlify function
+            const response = await fetch('/.netlify/functions/scan-menu-simple', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    image: base64Image,
+                    userId: userId,
+                    sessionId: sessionId
+                })
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const result = await response.json();
+            console.log('🔍 Netlify function response:', result);
+            
+            return result;
 
         } catch (error) {
             console.error('❌ Scan failed:', error);
