@@ -427,21 +427,125 @@ function handleScanClick() {
             processImage(file);
         }
         
-        // Process the image (placeholder)
+        // Process the image with Tesseract.js
         async function processImage(file) {
             try {
-                // Simulate processing time
-                await new Promise(resolve => setTimeout(resolve, 3000));
+                // Initialize Tesseract scanner if not already done
+                if (!window.tesseractScanner) {
+                    window.tesseractScanner = new TesseractScanner();
+                }
+
+                // Use Tesseract.js for OCR
+                const ocrResult = await window.tesseractScanner.scanImage(file);
                 
-                // TODO: Implement actual OCR and translation
-                // For now, just show success
-                showProcessing(false);
-                alert('Menu processed successfully! (This is a demo - actual processing will be implemented next)');
+                if (!ocrResult.success) {
+                    throw new Error(ocrResult.error || 'OCR processing failed');
+                }
+
+                // Get userId from Supabase Auth (if available)
+                let userId = null;
+                try {
+                    const { data: { user } } = await supabase.auth.getUser();
+                    userId = user?.id || null;
+                } catch (e) {
+                    userId = null;
+                }
+
+                // Always use a sessionId for anonymous users
+                let sessionId = sessionStorage.getItem('sessionId');
+                if (!sessionId) {
+                    sessionId = 'sess_' + Math.random().toString(36).substr(2, 16) + Date.now().toString(36);
+                    sessionStorage.setItem('sessionId', sessionId);
+                }
+
+                // Query Supabase for dish descriptions
+                const enrichedSections = await enrichWithDescriptions(ocrResult.data.sections);
+
+                // Store scan in Supabase
+                const scanResult = await storeScan(enrichedSections, userId, sessionId);
+
+                // Store results in session storage for results page
+                const resultData = {
+                    sections: enrichedSections,
+                    userTier: 'free',
+                    userId: userId || '',
+                    scanId: scanResult.scanId || 'temp_' + Date.now(),
+                    processingTime: Date.now() - Date.now(), // Will be calculated properly
+                    rawText: ocrResult.data.rawText,
+                    confidence: ocrResult.data.confidence
+                };
+
+                sessionStorage.setItem('menuResults', JSON.stringify(resultData));
+                sessionStorage.setItem('userId', resultData.userId);
+                sessionStorage.setItem('scanId', resultData.scanId);
+
+                // Redirect to results page
+                window.location.href = 'results.html';
                 
             } catch (error) {
                 console.error('Processing error:', error);
                 showProcessing(false);
-                alert('Failed to process the menu. Please try again.');
+                alert('Failed to process the menu: ' + error.message);
+            }
+        }
+
+        async function enrichWithDescriptions(sections) {
+            try {
+                const enrichedSections = [];
+                for (const section of sections) {
+                    const enrichedSection = { ...section };
+                    if (section.dishes && section.dishes.length > 0) {
+                        enrichedSection.dishes = [];
+                        for (const dish of section.dishes) {
+                            // Query Supabase for dish description
+                            const { data: dishData, error: dishError } = await supabase
+                                .from('dishes')
+                                .select('explanation')
+                                .eq('name', dish.name)
+                                .maybeSingle();
+                            
+                            if (dishError) {
+                                console.error('Supabase dish lookup error:', dishError);
+                            }
+                            
+                            enrichedSection.dishes.push({
+                                ...dish,
+                                description: dishData?.explanation || 'No description available'
+                            });
+                        }
+                    }
+                    enrichedSections.push(enrichedSection);
+                }
+                return enrichedSections;
+            } catch (error) {
+                console.error('Error enriching with descriptions:', error);
+                return sections;
+            }
+        }
+
+        async function storeScan(sections, userId, sessionId) {
+            try {
+                const { data, error } = await supabase
+                    .from('menu_scans')
+                    .insert([{
+                        user_id: userId || null,
+                        session_id: sessionId || null,
+                        tier: 'free',
+                        menu_json: sections,
+                        created_at: new Date().toISOString()
+                    }])
+                    .select()
+                    .single();
+
+                if (error) {
+                    console.error('Error storing scan:', error);
+                    return { scanId: 'temp_' + Date.now() };
+                }
+
+                return { scanId: data.id };
+            } catch (error) {
+                console.error('Error storing scan:', error);
+                return { scanId: 'temp_' + Date.now() };
             }
         }
         
@@ -491,5 +595,9 @@ function handleScanClick() {
             }
         });
     </script>
+    
+    <!-- Tesseract.js for OCR -->
+    <script src="https://unpkg.com/tesseract.js@v4.1.1/dist/tesseract.min.js"></script>
+    <script src="js/tesseract-scanner.js"></script>
 </body>
 </html>

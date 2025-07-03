@@ -204,55 +204,133 @@ class MenuScanner {
     }
 
     async callNetlifyFunction(file) {
-        const base64 = await this.fileToBase64(file);
-    
-        // Get userId from Supabase Auth (if available)
-        let userId = null;
-        if (window.supabase) {
-            try {
-                const { data: { user } } = await supabase.auth.getUser();
-                userId = user?.id || null;
-            } catch (e) {
-                userId = null;
-            }
+        // Initialize Tesseract scanner if not already done
+        if (!window.tesseractScanner) {
+            window.tesseractScanner = new TesseractScanner();
         }
-    
-        // Always use a sessionId for anonymous users
-        let sessionId = sessionStorage.getItem('sessionId');
-        if (!sessionId) {
-            sessionId = 'sess_' + Math.random().toString(36).substr(2, 16) + Date.now().toString(36);
-            sessionStorage.setItem('sessionId', sessionId);
-        }
-    
+
         try {
-            const response = await fetch('/.netlify/functions/scan-menu', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    image: base64,
-                    userId: userId,      // may be null
-                    sessionId: sessionId // always present
-                })
-            });
-    
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(`Server error: ${response.status} - ${errorText}`);
+            // Use Tesseract.js for OCR
+            const ocrResult = await window.tesseractScanner.scanImage(file);
+            
+            if (!ocrResult.success) {
+                throw new Error(ocrResult.error || 'OCR processing failed');
             }
-    
-            const result = await response.json();
-            // Save userId and scanId for results page
-            if (result.success && result.data) {
-                sessionStorage.setItem('userId', result.data.userId || '');
-                sessionStorage.setItem('scanId', result.data.scanId || '');
+
+            // Get userId from Supabase Auth (if available)
+            let userId = null;
+            if (window.supabase) {
+                try {
+                    const { data: { user } } = await supabase.auth.getUser();
+                    userId = user?.id || null;
+                } catch (e) {
+                    userId = null;
+                }
             }
-            return result;
-    
+
+            // Always use a sessionId for anonymous users
+            let sessionId = sessionStorage.getItem('sessionId');
+            if (!sessionId) {
+                sessionId = 'sess_' + Math.random().toString(36).substr(2, 16) + Date.now().toString(36);
+                sessionStorage.setItem('sessionId', sessionId);
+            }
+
+            // Query Supabase for dish descriptions
+            const enrichedSections = await this.enrichWithDescriptions(ocrResult.data.sections);
+
+            // Store scan in Supabase
+            const scanResult = await this.storeScan(enrichedSections, userId, sessionId);
+
+            return {
+                success: true,
+                data: {
+                    sections: enrichedSections,
+                    userTier: 'free', // For now, assume free tier
+                    userId: userId || '',
+                    scanId: scanResult.scanId || 'temp_' + Date.now(),
+                    processingTime: Date.now() - this.scanStartTime,
+                    rawText: ocrResult.data.rawText,
+                    confidence: ocrResult.data.confidence
+                }
+            };
+
         } catch (error) {
+            console.error('❌ Scan failed:', error);
             return {
                 success: false,
-                error: error.message || 'Failed to connect to server'
+                error: error.message || 'Failed to process image'
             };
+        }
+    }
+
+    async enrichWithDescriptions(sections) {
+        try {
+            // Initialize Supabase client if not already done
+            if (!window.supabase) {
+                console.error('Supabase client not available');
+                return sections;
+            }
+
+            const enrichedSections = [];
+            for (const section of sections) {
+                const enrichedSection = { ...section };
+                if (section.dishes && section.dishes.length > 0) {
+                    enrichedSection.dishes = [];
+                    for (const dish of section.dishes) {
+                        // Query Supabase for dish description
+                        const { data: dishData, error: dishError } = await window.supabase
+                            .from('dishes')
+                            .select('explanation')
+                            .eq('name', dish.name)
+                            .maybeSingle();
+                        
+                        if (dishError) {
+                            console.error('Supabase dish lookup error:', dishError);
+                        }
+                        
+                        enrichedSection.dishes.push({
+                            ...dish,
+                            description: dishData?.explanation || 'No description available'
+                        });
+                    }
+                }
+                enrichedSections.push(enrichedSection);
+            }
+            return enrichedSections;
+        } catch (error) {
+            console.error('Error enriching with descriptions:', error);
+            return sections;
+        }
+    }
+
+    async storeScan(sections, userId, sessionId) {
+        try {
+            if (!window.supabase) {
+                console.error('Supabase client not available');
+                return { scanId: 'temp_' + Date.now() };
+            }
+
+            const { data, error } = await window.supabase
+                .from('menu_scans')
+                .insert([{
+                    user_id: userId || null,
+                    session_id: sessionId || null,
+                    tier: 'free',
+                    menu_json: sections,
+                    created_at: new Date().toISOString()
+                }])
+                .select()
+                .single();
+
+            if (error) {
+                console.error('Error storing scan:', error);
+                return { scanId: 'temp_' + Date.now() };
+            }
+
+            return { scanId: data.id };
+        } catch (error) {
+            console.error('Error storing scan:', error);
+            return { scanId: 'temp_' + Date.now() };
         }
     }
 

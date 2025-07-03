@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Tesseract.js OCR</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .upload-area {
+            border: 2px dashed #ccc;
+            padding: 40px;
+            text-align: center;
+            margin: 20px 0;
+            cursor: pointer;
+        }
+        .upload-area:hover {
+            border-color: #666;
+        }
+        .results {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f5f5f5;
+            border-radius: 5px;
+        }
+        .loading {
+            color: #666;
+            font-style: italic;
+        }
+        .error {
+            color: red;
+        }
+        .success {
+            color: green;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test Tesseract.js OCR</h1>
+    <p>Upload an image to test OCR functionality:</p>
+    
+    <div class="upload-area" onclick="document.getElementById('file-input').click()">
+        <p>Click to upload an image or drag and drop</p>
+        <input type="file" id="file-input" accept="image/*" style="display: none;" onchange="handleFile(event)">
+    </div>
+    
+    <div id="results" class="results" style="display: none;">
+        <h3>OCR Results:</h3>
+        <div id="ocr-text"></div>
+        <div id="parsed-sections"></div>
+    </div>
+
+    <!-- Tesseract.js -->
+    <script src="https://unpkg.com/tesseract.js@v4.1.1/dist/tesseract.min.js"></script>
+    <script src="js/tesseract-scanner.js"></script>
+    
+    <script>
+        let tesseractScanner = null;
+
+        async function handleFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const resultsDiv = document.getElementById('results');
+            const ocrTextDiv = document.getElementById('ocr-text');
+            const parsedSectionsDiv = document.getElementById('parsed-sections');
+
+            resultsDiv.style.display = 'block';
+            ocrTextDiv.innerHTML = '<div class="loading">Processing image with Tesseract.js...</div>';
+            parsedSectionsDiv.innerHTML = '';
+
+            try {
+                // Initialize Tesseract scanner
+                if (!tesseractScanner) {
+                    tesseractScanner = new TesseractScanner();
+                }
+
+                // Process the image
+                const result = await tesseractScanner.scanImage(file);
+                
+                if (result.success) {
+                    ocrTextDiv.innerHTML = `
+                        <div class="success">
+                            <h4>Raw OCR Text:</h4>
+                            <pre>${result.data.rawText}</pre>
+                            <p><strong>Confidence:</strong> ${result.data.confidence}%</p>
+                        </div>
+                    `;
+
+                    parsedSectionsDiv.innerHTML = `
+                        <h4>Parsed Menu Sections:</h4>
+                        <pre>${JSON.stringify(result.data.sections, null, 2)}</pre>
+                    `;
+                } else {
+                    ocrTextDiv.innerHTML = `<div class="error">Error: ${result.error}</div>`;
+                }
+            } catch (error) {
+                ocrTextDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+                console.error('OCR Error:', error);
+            }
+        }
+
+        // Drag and drop functionality
+        const uploadArea = document.querySelector('.upload-area');
+        
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = '#666';
+        });
+        
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.style.borderColor = '#ccc';
+        });
+        
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = '#ccc';
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                const event = { target: { files: files } };
+                handleFile(event);
+            }
+        });
+    </script>
+</body>
+</html> 
