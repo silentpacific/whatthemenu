@@ -206,16 +206,29 @@ class MenuScanner {
     async callNetlifyFunction(file) {
         // Initialize Tesseract scanner if not already done
         if (!window.tesseractScanner) {
-            window.tesseractScanner = new TesseractScanner();
+            try {
+                window.tesseractScanner = new TesseractScanner();
+                console.log('🔧 TesseractScanner created');
+            } catch (error) {
+                console.error('❌ Failed to create TesseractScanner:', error);
+                return {
+                    success: false,
+                    error: 'Failed to initialize OCR system: ' + error.message
+                };
+            }
         }
 
         try {
+            console.log('📁 Processing file:', file.name, 'Size:', file.size, 'Type:', file.type);
+            
             // Use Tesseract.js for OCR
             const ocrResult = await window.tesseractScanner.scanImage(file);
             
             if (!ocrResult.success) {
                 throw new Error(ocrResult.error || 'OCR processing failed');
             }
+
+            console.log('✅ OCR successful, enriching with descriptions...');
 
             // Get userId from Supabase Auth (if available)
             let userId = null;

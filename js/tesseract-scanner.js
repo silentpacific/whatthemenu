@@ -39,7 +39,7 @@ class TesseractScanner {
         });
     }
 
-    async scanImage(imageFile) {
+    async scanImage(file) {
         if (!this.isInitialized) {
             await this.initialize();
         }
@@ -47,15 +47,43 @@ class TesseractScanner {
         try {
             console.log('🔍 Starting Tesseract OCR scan...');
             
-            // Convert file to base64
-            const base64 = await this.fileToBase64(imageFile);
+            // Validate file
+            if (!file || !file.type.startsWith('image/')) {
+                throw new Error('Invalid file type. Please upload an image.');
+            }
+
+            // Convert file to proper format for Tesseract
+            const imageUrl = await this.fileToImageUrl(file);
             
-            // Perform OCR
-            const result = await this.worker.recognize(base64);
+            // Perform OCR with better error handling and timeout
+            console.log('📸 Processing image with Tesseract...');
+            
+            // Add timeout to prevent hanging
+            const timeoutPromise = new Promise((_, reject) => {
+                setTimeout(() => reject(new Error('OCR processing timed out')), 30000); // 30 second timeout
+            });
+            
+            const ocrPromise = this.worker.recognize(imageUrl, {
+                logger: m => console.log('Tesseract:', m)
+            });
+            
+            const result = await Promise.race([ocrPromise, timeoutPromise]);
+            
             console.log('✅ OCR completed:', result.data.text);
+            
+            // Check if we got any meaningful text
+            if (!result.data.text || result.data.text.trim().length < 10) {
+                throw new Error('OCR could not extract meaningful text from the image. Please try a clearer image.');
+            }
             
             // Parse the extracted text into menu sections
             const sections = this.parseMenuText(result.data.text);
+            
+            // Check if we found any dishes
+            const totalDishes = sections.reduce((sum, section) => sum + (section.dishes?.length || 0), 0);
+            if (totalDishes === 0) {
+                throw new Error('No menu items could be identified. Please try a clearer image or different menu.');
+            }
             
             return {
                 success: true,
@@ -67,11 +95,89 @@ class TesseractScanner {
             };
         } catch (error) {
             console.error('❌ OCR scan failed:', error);
+            
+            // Provide helpful error messages
+            let errorMessage = error.message;
+            if (error.message.includes('SetImageFile')) {
+                errorMessage = 'Image processing failed. Please try a different image format (JPG, PNG).';
+            } else if (error.message.includes('timeout')) {
+                errorMessage = 'Processing took too long. Please try a smaller or clearer image.';
+            } else if (error.message.includes('meaningful text')) {
+                errorMessage = 'Could not read text from this image. Please ensure the image is clear and contains readable text.';
+            }
+            
             return {
                 success: false,
-                error: error.message
+                error: errorMessage
             };
         }
+    }
+
+    async fileToImageUrl(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+                try {
+                    // Create an image element to validate and process
+                    const img = new Image();
+                    img.onload = () => {
+                        // Create a canvas to ensure proper format and optimize for OCR
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+                        
+                        // Calculate optimal size for OCR (not too large, not too small)
+                        const maxSize = 1200;
+                        let { width, height } = img;
+                        
+                        if (width > maxSize || height > maxSize) {
+                            const ratio = Math.min(maxSize / width, maxSize / height);
+                            width = Math.floor(width * ratio);
+                            height = Math.floor(height * ratio);
+                        }
+                        
+                        // Set canvas size
+                        canvas.width = width;
+                        canvas.height = height;
+                        
+                        // Apply image processing for better OCR
+                        ctx.fillStyle = 'white';
+                        ctx.fillRect(0, 0, width, height);
+                        
+                        // Draw image with smoothing disabled for better text recognition
+                        ctx.imageSmoothingEnabled = false;
+                        ctx.drawImage(img, 0, 0, width, height);
+                        
+                        // Apply contrast enhancement for better OCR
+                        const imageData = ctx.getImageData(0, 0, width, height);
+                        const data = imageData.data;
+                        
+                        // Simple contrast enhancement
+                        for (let i = 0; i < data.length; i += 4) {
+                            const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
+                            const threshold = 128;
+                            const value = avg > threshold ? 255 : 0;
+                            data[i] = value;     // Red
+                            data[i + 1] = value; // Green
+                            data[i + 2] = value; // Blue
+                            // Alpha stays the same
+                        }
+                        
+                        ctx.putImageData(imageData, 0, 0);
+                        
+                        // Convert to data URL with high quality
+                        const dataUrl = canvas.toDataURL('image/png', 1.0);
+                        console.log('🖼️ Image processed for OCR:', width + 'x' + height);
+                        resolve(dataUrl);
+                    };
+                    img.onerror = () => reject(new Error('Failed to load image'));
+                    img.src = reader.result;
+                } catch (error) {
+                    reject(error);
+                }
+            };
+            reader.onerror = () => reject(new Error('Failed to read file'));
+            reader.readAsDataURL(file);
+        });
     }
 
     parseMenuText(text) {
@@ -151,15 +257,6 @@ class TesseractScanner {
         }
         
         return sections;
-    }
-
-    async fileToBase64(file) {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result);
-            reader.onerror = reject;
-            reader.readAsDataURL(file);
-        });
     }
 
     async terminate() {
