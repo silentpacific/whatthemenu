@@ -163,11 +163,12 @@ class MenuScanner {
 
         console.log('🔍 Starting scan process...');
         this.isProcessing = true;
+        this.scanStartTime = Date.now();
         
         const scanBtn = document.getElementById('scan-btn');
         if (scanBtn) {
             scanBtn.disabled = true;
-            scanBtn.textContent = 'Analyzing...';
+            scanBtn.textContent = 'Processing...';
         }
 
         try {
@@ -221,59 +222,108 @@ class MenuScanner {
         try {
             console.log('📁 Processing file:', file.name, 'Size:', file.size, 'Type:', file.type);
             
+            // Show loading message in upload area
+            const uploadArea = document.getElementById('upload-area');
+            if (uploadArea) {
+                uploadArea.innerHTML = `
+                    <div class="upload-content">
+                        <div class="upload-icon">🔍</div>
+                        <div class="upload-text">
+                            <p class="upload-primary">Processing your menu...</p>
+                            <p class="upload-secondary">This may take a few seconds</p>
+                        </div>
+                    </div>
+                `;
+            }
+            
             // Use Tesseract.js for OCR
             const ocrResult = await window.tesseractScanner.scanImage(file);
             
             if (!ocrResult.success) {
-                throw new Error(ocrResult.error || 'OCR processing failed');
+                console.log('⚠️ Tesseract.js failed, trying OCR.space fallback...');
+                
+                // Try OCR.space fallback
+                if (!window.ocrFallback) {
+                    window.ocrFallback = new OCRFallback();
+                }
+                
+                const fallbackResult = await window.ocrFallback.scanImage(file);
+                
+                if (!fallbackResult.success) {
+                    throw new Error(`OCR failed: ${ocrResult.error}. Fallback also failed: ${fallbackResult.error}`);
+                }
+                
+                console.log('✅ OCR.space fallback successful');
+                return this.processOCRResult(fallbackResult, userId, sessionId);
             }
 
             console.log('✅ OCR successful, enriching with descriptions...');
-
-            // Get userId from Supabase Auth (if available)
-            let userId = null;
-            if (window.supabase) {
-                try {
-                    const { data: { user } } = await supabase.auth.getUser();
-                    userId = user?.id || null;
-                } catch (e) {
-                    userId = null;
-                }
-            }
-
-            // Always use a sessionId for anonymous users
-            let sessionId = sessionStorage.getItem('sessionId');
-            if (!sessionId) {
-                sessionId = 'sess_' + Math.random().toString(36).substr(2, 16) + Date.now().toString(36);
-                sessionStorage.setItem('sessionId', sessionId);
-            }
-
-            // Query Supabase for dish descriptions
-            const enrichedSections = await this.enrichWithDescriptions(ocrResult.data.sections);
-
-            // Store scan in Supabase
-            const scanResult = await this.storeScan(enrichedSections, userId, sessionId);
-
-            return {
-                success: true,
-                data: {
-                    sections: enrichedSections,
-                    userTier: 'free', // For now, assume free tier
-                    userId: userId || '',
-                    scanId: scanResult.scanId || 'temp_' + Date.now(),
-                    processingTime: Date.now() - this.scanStartTime,
-                    rawText: ocrResult.data.rawText,
-                    confidence: ocrResult.data.confidence
-                }
-            };
+            return this.processOCRResult(ocrResult, userId, sessionId);
 
         } catch (error) {
             console.error('❌ Scan failed:', error);
+            
+            // Reset upload area on error
+            const uploadArea = document.getElementById('upload-area');
+            if (uploadArea) {
+                uploadArea.innerHTML = `
+                    <input type="file" id="file-input" accept="image/*" hidden>
+                    <div class="upload-content">
+                        <div class="upload-icon">📷</div>
+                        <div class="upload-text">
+                            <p class="upload-primary">Drop your menu photo here</p>
+                            <p class="upload-secondary">or click to upload an image</p>
+                        </div>
+                    </div>
+                `;
+            }
+            
             return {
                 success: false,
                 error: error.message || 'Failed to process image'
             };
         }
+    }
+
+    async processOCRResult(ocrResult, userId, sessionId) {
+        // Get userId from Supabase Auth (if available)
+        if (!userId && window.supabase) {
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                userId = user?.id || null;
+            } catch (e) {
+                userId = null;
+            }
+        }
+
+        // Always use a sessionId for anonymous users
+        if (!sessionId) {
+            sessionId = sessionStorage.getItem('sessionId');
+            if (!sessionId) {
+                sessionId = 'sess_' + Math.random().toString(36).substr(2, 16) + Date.now().toString(36);
+                sessionStorage.setItem('sessionId', sessionId);
+            }
+        }
+
+        // Query Supabase for dish descriptions
+        const enrichedSections = await this.enrichWithDescriptions(ocrResult.data.sections);
+
+        // Store scan in Supabase
+        const scanResult = await this.storeScan(enrichedSections, userId, sessionId);
+
+        return {
+            success: true,
+            data: {
+                sections: enrichedSections,
+                userTier: 'free', // For now, assume free tier
+                userId: userId || '',
+                scanId: scanResult.scanId || 'temp_' + Date.now(),
+                processingTime: Date.now() - this.scanStartTime,
+                rawText: ocrResult.data.rawText,
+                confidence: ocrResult.data.confidence,
+                source: ocrResult.data.source || 'tesseract'
+            }
+        };
     }
 
     async enrichWithDescriptions(sections) {

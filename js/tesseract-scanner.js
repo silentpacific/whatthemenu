@@ -58,14 +58,12 @@ class TesseractScanner {
             // Perform OCR with better error handling and timeout
             console.log('📸 Processing image with Tesseract...');
             
-            // Add timeout to prevent hanging
+            // Add timeout to prevent hanging (15 seconds should be enough)
             const timeoutPromise = new Promise((_, reject) => {
-                setTimeout(() => reject(new Error('OCR processing timed out')), 30000); // 30 second timeout
+                setTimeout(() => reject(new Error('OCR processing timed out')), 15000); // 15 second timeout
             });
             
-            const ocrPromise = this.worker.recognize(imageUrl, {
-                logger: m => console.log('Tesseract:', m)
-            });
+            const ocrPromise = this.worker.recognize(imageUrl);
             
             const result = await Promise.race([ocrPromise, timeoutPromise]);
             
