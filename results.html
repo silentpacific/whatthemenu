@@ -850,7 +850,7 @@
 
                 const descDiv = document.createElement('div');
                 descDiv.className = 'dish-original-desc';
-                descDiv.textContent = dish.originalDescription || dish.description || '';
+                descDiv.textContent = dish.description || dish.originalDescription || '';
 
                 // Add tags
                 const tagsDiv = this.createTagsElement(dish);
@@ -869,7 +869,7 @@
                 // Dish explanation
                 const explanationDiv = document.createElement('div');
                 explanationDiv.className = 'dish-explanation';
-                explanationDiv.textContent = dish.aiExplanation || dish.explanation || 'No explanation available';
+                explanationDiv.textContent = dish.description || dish.aiExplanation || dish.explanation || 'No explanation available';
 
                 dishDiv.appendChild(headerDiv);
                 dishDiv.appendChild(explanationDiv);
@@ -956,7 +956,7 @@ function renderMenu(sections, userId, scanId) {
                           style="cursor:pointer; color:#0891b2; text-decoration:underline;">
                         ${dish.name}
                     </span>
-                    <span class="dish-explanation" style="margin-left:10px; color:#64748b;"></span>
+                    <span class="dish-explanation" style="margin-left:10px; color:#64748b;">${dish.description || 'No description available'}</span>
                 </li>
             `;
         });
@@ -973,6 +973,17 @@ function setupDishClickHandlers(userId, scanId) {
             const dishDesc = this.dataset.dishDesc || '';
             const explanationEl = this.nextElementSibling;
 
+            // If we already have a description, just toggle visibility
+            if (dishDesc && dishDesc !== 'No description available') {
+                if (explanationEl.style.display === 'none') {
+                    explanationEl.style.display = 'inline';
+                } else {
+                    explanationEl.style.display = 'none';
+                }
+                return;
+            }
+
+            // If no description available, try to get one from OpenAI
             explanationEl.textContent = 'Loading explanation...';
 
             const response = await fetch('/.netlify/functions/get-dish-explanation', {

@@ -126,12 +126,12 @@ exports.handler = async (event, context) => {
             messages: [
                 {
                     role: "system",
-                    content: "You are a helpful assistant that extracts structured menu data from images. Always respond with valid JSON only."
+                    content: "You are a helpful assistant that extracts only dish names from menu images. Always respond with valid JSON only."
                 },
                 {
                     role: "user",
                     content: [
-                        { type: "text", text: `Extract all menu sections and dish names from this menu image. Return as a JSON array of sections, each with a name and an array of dishes (each dish has only a name). Example format: [{\"section\":\"Starters\",\"dishes\":[{\"name\":\"Garlic Bread\"},{\"name\":\"Bruschetta\"}]}]` },
+                        { type: "text", text: `Extract ONLY dish names from this menu image. Do not include descriptions, prices, or any other information. Return as a JSON array of sections, each with a name and an array of dishes (each dish has only a name). Example format: [{\"section\":\"Starters\",\"dishes\":[{\"name\":\"Garlic Bread\"},{\"name\":\"Bruschetta\"}]}]` },
                         { type: "image_url", image_url: { "url": `data:image/jpeg;base64,${resizedBase64}`, detail: "low" } }
                     ]
                 }
@@ -155,13 +155,40 @@ exports.handler = async (event, context) => {
             };
         }
 
-        // 3. Store scan in Supabase
+        // 3. Query Supabase dishes table for descriptions
+        const enrichedSections = [];
+        for (const section of parsedSections) {
+            const enrichedSection = { ...section };
+            if (section.dishes && section.dishes.length > 0) {
+                enrichedSection.dishes = [];
+                for (const dish of section.dishes) {
+                    // Query Supabase for dish description
+                    const { data: dishData, error: dishError } = await supabase
+                        .from('dishes')
+                        .select('explanation')
+                        .eq('name', dish.name)
+                        .maybeSingle();
+                    
+                    if (dishError) {
+                        console.error('Supabase dish lookup error:', dishError);
+                    }
+                    
+                    enrichedSection.dishes.push({
+                        ...dish,
+                        description: dishData?.explanation || 'No description available'
+                    });
+                }
+            }
+            enrichedSections.push(enrichedSection);
+        }
+
+        // 4. Store scan in Supabase
         const { data: scanInsertData, error: scanError } = await supabase.from('menu_scans').insert([
             {
                 user_id: userId || null,
                 session_id: sessionId || null,
                 tier: userTier,
-                menu_json: parsedSections,
+                menu_json: enrichedSections,
                 created_at: new Date().toISOString()
             }
         ]).select().single();
@@ -170,14 +197,14 @@ exports.handler = async (event, context) => {
             console.error('Supabase scan insert error:', scanError);
         }
 
-        // 4. Return structured menu, userId, scanId
+        // 5. Return structured menu with descriptions, userId, scanId
         return {
             statusCode: 200,
             headers,
             body: JSON.stringify({
                 success: true,
                 data: {
-                    sections: parsedSections,
+                    sections: enrichedSections,
                     userTier,
                     userId: userId || '',
                     scanId: scanInsertData?.id || '',
