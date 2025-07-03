@@ -93,17 +93,26 @@ class TesseractScanner {
             };
         } catch (error) {
             console.error('❌ OCR scan failed:', error);
-            
+
+            // Always treat error as string
+            let errorMessage = '';
+            if (typeof error === 'string') {
+                errorMessage = error;
+            } else if (error && typeof error.message === 'string') {
+                errorMessage = error.message;
+            } else {
+                errorMessage = JSON.stringify(error);
+            }
+
             // Provide helpful error messages
-            let errorMessage = error.message;
-            if (error.message.includes('SetImageFile')) {
+            if (errorMessage.includes('SetImageFile')) {
                 errorMessage = 'Image processing failed. Please try a different image format (JPG, PNG).';
-            } else if (error.message.includes('timeout')) {
+            } else if (errorMessage.includes('timeout')) {
                 errorMessage = 'Processing took too long. Please try a smaller or clearer image.';
-            } else if (error.message.includes('meaningful text')) {
+            } else if (errorMessage.includes('meaningful text')) {
                 errorMessage = 'Could not read text from this image. Please ensure the image is clear and contains readable text.';
             }
-            
+
             return {
                 success: false,
                 error: errorMessage
