@@ -336,23 +336,32 @@ exports.handler = async (event, context) => {
                     let currentSection = { section: 'Menu Items', dishes: [] };
                     let currentDish = '';
                     let dishDescription = [];
+                    let currentPrice = '';
+                    
+                    console.log('Parsing text lines:', textLines.length);
                     
                     for (let i = 0; i < textLines.length; i++) {
                         const line = textLines[i].trim();
                         
-                        // Skip prices and numbers
-                        if (/^\$?\d+\.?\d*$/.test(line) || /^\d+\/\d+$/.test(line)) continue;
+                        // Skip empty lines
+                        if (line.length === 0) continue;
                         
-                        // Check if this is a section header (starts with - or is all caps)
+                        // Check if this is a section header (starts with - or is all caps and short)
                         const isSectionHeader = line.startsWith('-') || 
-                                              (line === line.toUpperCase() && line.length > 2 && line.length < 20);
+                                              (line === line.toUpperCase() && line.length > 2 && line.length < 25 && !line.includes(' '));
+                        
+                        // Check if this is a price (just numbers)
+                        const isPrice = /^\d+$/.test(line);
+                        
+                        console.log(`Line ${i}: "${line}" - Section: ${isSectionHeader}, Price: ${isPrice}, Current dish: "${currentDish}"`);
                         
                         if (isSectionHeader) {
                             // Save current dish
                             if (currentDish) {
                                 currentSection.dishes.push({
                                     name: currentDish,
-                                    description: dishDescription.join(' ')
+                                    description: dishDescription.join(' '),
+                                    price: currentPrice
                                 });
                             }
                             
@@ -366,11 +375,17 @@ exports.handler = async (event, context) => {
                             currentSection = { section: cleanSectionName, dishes: [] };
                             currentDish = '';
                             dishDescription = [];
+                            currentPrice = '';
+                        } else if (isPrice) {
+                            // This is a price for the current dish
+                            currentPrice = line;
                         } else {
                             // This is either a dish name or description
                             if (!currentDish) {
+                                // First non-section, non-price line = dish name
                                 currentDish = line;
                             } else {
+                                // Subsequent lines = description
                                 dishDescription.push(line);
                             }
                         }
@@ -380,7 +395,8 @@ exports.handler = async (event, context) => {
                     if (currentDish) {
                         currentSection.dishes.push({
                             name: currentDish,
-                            description: dishDescription.join(' ')
+                            description: dishDescription.join(' '),
+                            price: currentPrice
                         });
                     }
                     
