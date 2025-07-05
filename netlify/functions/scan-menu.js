@@ -98,119 +98,25 @@ async function fallbackOCR(buffer) {
     };
 }
 
-// Parse text into menu sections
+// Simple menu parsing - group consecutive lines into dishes
 function parseMenuSections(textLines) {
     const sections = [];
     let currentSection = { section: 'Menu Items', dishes: [] };
     
-    // French menu section keywords
-    const sectionKeywords = [
-        'appetizers', 'starters', 'entrees', 'mains', 'desserts', 
-        'drinks', 'beverages', 'salads', 'soups', 'pasta', 'pizza',
-        'seafood', 'meat', 'vegetarian', 'sides', 'specials',
-        // French keywords
-        'les', 'pour', 'commencer', 'soupes', 'salades', 'plats', 
-        'classiques', 'moules', 'frites', 'charcuterie', 'paté'
-    ];
-    
-    // French dish indicators (words that suggest a dish name)
-    const dishIndicators = [
-        'escargots', 'crevettes', 'merguez', 'sardines', 'calamars',
-        'steak', 'coq', 'osso', 'buco', 'fettuccine', 'boeuf', 'bourguignon',
-        'moules', 'choucroute', 'cassoulet', 'foie', 'veau', 'boudin',
-        'hachis', 'parmentier', 'blanquette', 'rotisserie', 'poulet',
-        'arugula', 'frisée', 'endive', 'radicchio', 'watercress'
-    ];
-    
-    let currentDish = '';
-    let dishWords = [];
-    
-    for (const line of textLines) {
-        const cleanLine = line.trim();
-        if (cleanLine.length < 2 || cleanLine.length > 100) continue;
-        
-        // Skip price-only lines and numbers
-        if (/^\$?\d+\.?\d*$/.test(cleanLine) || /^\d+\/\d+$/.test(cleanLine)) continue;
-        
-        // Check if it's a section header (all caps or contains section keywords)
-        const isAllCaps = cleanLine === cleanLine.toUpperCase() && cleanLine.length > 2;
-        const isSection = sectionKeywords.some(keyword => 
-            cleanLine.toLowerCase().includes(keyword)
-        ) || isAllCaps;
-        
-        // Check if it's likely a dish name
-        const isDishIndicator = dishIndicators.some(indicator => 
-            cleanLine.toLowerCase().includes(indicator)
-        );
-        
-        if (isSection) {
-            // Save current dish if we have one
-            if (currentDish && dishWords.length > 0) {
-                currentSection.dishes.push({ 
-                    name: currentDish,
-                    description: dishWords.join(' ')
-                });
-                currentDish = '';
-                dishWords = [];
-            }
-            
-            // Start new section
-            if (currentSection.dishes.length > 0) {
-                sections.push(currentSection);
-            }
-            currentSection = { section: cleanLine, dishes: [] };
-        } else if (isDishIndicator || cleanLine.length > 3) {
-            // This looks like a dish name or part of a dish description
-            if (!currentDish) {
-                currentDish = cleanLine;
-            } else {
-                dishWords.push(cleanLine);
-            }
-        } else {
-            // Add to current dish description
-            if (currentDish) {
-                dishWords.push(cleanLine);
-            }
-        }
-    }
-    
-    // Add the last dish
-    if (currentDish && dishWords.length > 0) {
-        currentSection.dishes.push({ 
-            name: currentDish,
-            description: dishWords.join(' ')
-        });
-    }
-    
-    if (currentSection.dishes.length > 0) {
-        sections.push(currentSection);
-    }
-    
-    // If we didn't find any sections, try a different approach
-    if (sections.length === 0) {
-        return parseMenuSectionsAlternative(textLines);
-    }
-    
-    return sections;
-}
-
-// Alternative parsing method for complex menus
-function parseMenuSectionsAlternative(textLines) {
-    const sections = [];
-    let currentSection = { section: 'Menu Items', dishes: [] };
+    // Filter out empty lines and very short lines
+    const filteredLines = textLines.filter(line => line.trim().length > 2);
     
     let currentDish = '';
     let dishDescription = [];
     
-    for (let i = 0; i < textLines.length; i++) {
-        const line = textLines[i].trim();
-        if (line.length < 2) continue;
+    for (let i = 0; i < filteredLines.length; i++) {
+        const line = filteredLines[i].trim();
         
         // Skip prices and numbers
         if (/^\$?\d+\.?\d*$/.test(line) || /^\d+\/\d+$/.test(line)) continue;
         
-        // Check if this line looks like a section header (all caps, short)
-        const isSectionHeader = line === line.toUpperCase() && line.length > 2 && line.length < 20;
+        // Check if this looks like a section header (all caps, 3-15 characters)
+        const isSectionHeader = line === line.toUpperCase() && line.length >= 3 && line.length <= 15;
         
         if (isSectionHeader) {
             // Save current dish
@@ -219,8 +125,6 @@ function parseMenuSectionsAlternative(textLines) {
                     name: currentDish,
                     description: dishDescription.join(' ')
                 });
-                currentDish = '';
-                dishDescription = [];
             }
             
             // Start new section
@@ -228,8 +132,10 @@ function parseMenuSectionsAlternative(textLines) {
                 sections.push(currentSection);
             }
             currentSection = { section: line, dishes: [] };
+            currentDish = '';
+            dishDescription = [];
         } else {
-            // This is either a dish name or description
+            // This is part of a dish
             if (!currentDish) {
                 currentDish = line;
             } else {
@@ -252,6 +158,8 @@ function parseMenuSectionsAlternative(textLines) {
     
     return sections;
 }
+
+
 
 exports.handler = async (event, context) => {
     const startTime = Date.now();
