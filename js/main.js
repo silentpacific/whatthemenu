@@ -246,7 +246,7 @@ class MenuScanner {
             }
             
             // Call the Netlify function
-            const response = await fetch('/.netlify/functions/scan-menu', {
+            const response = await fetch('/.netlify/functions/scan-menu-minimal', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
