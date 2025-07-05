@@ -328,16 +328,12 @@ exports.handler = async (event, context) => {
                         bounds: block.boundingPoly?.vertices
                     })));
                     
-                    // For now, just return the raw text with basic line grouping
+                    // Parse the already well-structured text from Google Vision API
                     const rawText = detections[0]?.description || '';
                     const textLines = rawText.split('\n').filter(line => line.trim().length > 0);
                     
-                    // Simple grouping: every 2-3 lines = one dish
-                    const sections = [{
-                        section: 'Menu Items',
-                        dishes: []
-                    }];
-                    
+                    const sections = [];
+                    let currentSection = { section: 'Menu Items', dishes: [] };
                     let currentDish = '';
                     let dishDescription = [];
                     
@@ -347,29 +343,49 @@ exports.handler = async (event, context) => {
                         // Skip prices and numbers
                         if (/^\$?\d+\.?\d*$/.test(line) || /^\d+\/\d+$/.test(line)) continue;
                         
-                        if (!currentDish) {
-                            currentDish = line;
-                        } else {
-                            dishDescription.push(line);
-                            
-                            // After 1-2 description lines, create a dish
-                            if (dishDescription.length >= 1) {
-                                sections[0].dishes.push({
+                        // Check if this is a section header (starts with - or is all caps)
+                        const isSectionHeader = line.startsWith('-') || 
+                                              (line === line.toUpperCase() && line.length > 2 && line.length < 20);
+                        
+                        if (isSectionHeader) {
+                            // Save current dish
+                            if (currentDish) {
+                                currentSection.dishes.push({
                                     name: currentDish,
                                     description: dishDescription.join(' ')
                                 });
-                                currentDish = '';
-                                dishDescription = [];
+                            }
+                            
+                            // Start new section
+                            if (currentSection.dishes.length > 0) {
+                                sections.push(currentSection);
+                            }
+                            
+                            // Clean section name (remove dashes, etc.)
+                            const cleanSectionName = line.replace(/^[- ]+/, '').replace(/[- ]+$/, '');
+                            currentSection = { section: cleanSectionName, dishes: [] };
+                            currentDish = '';
+                            dishDescription = [];
+                        } else {
+                            // This is either a dish name or description
+                            if (!currentDish) {
+                                currentDish = line;
+                            } else {
+                                dishDescription.push(line);
                             }
                         }
                     }
                     
-                    // Add any remaining dish
+                    // Add the last dish
                     if (currentDish) {
-                        sections[0].dishes.push({
+                        currentSection.dishes.push({
                             name: currentDish,
                             description: dishDescription.join(' ')
                         });
+                    }
+                    
+                    if (currentSection.dishes.length > 0) {
+                        sections.push(currentSection);
                     }
                     
                     result = {
