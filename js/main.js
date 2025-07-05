@@ -246,7 +246,7 @@ class MenuScanner {
             }
             
             // Call the Netlify function
-            const response = await fetch('/.netlify/functions/scan-menu-minimal', {
+            const response = await fetch('/.netlify/functions/scan-menu', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -375,7 +375,11 @@ class MenuScanner {
     // Placeholder methods for modal and results (implement as needed)
     showModal() {}
     showLoadingState() {}
-    displayResults(data) {}
+    displayResults(data) {
+        // Store results in session storage and redirect to results page
+        sessionStorage.setItem('menuResults', JSON.stringify(data));
+        window.location.href = '/results.html';
+    }
     displayError(msg) { alert(msg); }
     closeModal() {}
 }
