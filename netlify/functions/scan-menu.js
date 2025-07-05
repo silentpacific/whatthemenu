@@ -336,9 +336,6 @@ exports.handler = async (event, context) => {
                     let currentSection = { section: 'Menu Items', dishes: [] };
                     let currentDish = '';
                     let dishDescription = [];
-                    let currentPrice = '';
-                    
-                    console.log('Parsing text lines:', textLines.length);
                     
                     for (let i = 0; i < textLines.length; i++) {
                         const line = textLines[i].trim();
@@ -350,18 +347,12 @@ exports.handler = async (event, context) => {
                         const isSectionHeader = line.startsWith('-') || 
                                               (line === line.toUpperCase() && line.length > 2 && line.length < 25 && !line.includes(' '));
                         
-                        // Check if this is a price (just numbers)
-                        const isPrice = /^\d+$/.test(line);
-                        
-                        console.log(`Line ${i}: "${line}" - Section: ${isSectionHeader}, Price: ${isPrice}, Current dish: "${currentDish}"`);
-                        
                         if (isSectionHeader) {
                             // Save current dish
                             if (currentDish) {
                                 currentSection.dishes.push({
                                     name: currentDish,
-                                    description: dishDescription.join(' '),
-                                    price: currentPrice
+                                    description: dishDescription.join(' ')
                                 });
                             }
                             
@@ -375,18 +366,26 @@ exports.handler = async (event, context) => {
                             currentSection = { section: cleanSectionName, dishes: [] };
                             currentDish = '';
                             dishDescription = [];
-                            currentPrice = '';
-                        } else if (isPrice) {
-                            // This is a price for the current dish
-                            currentPrice = line;
                         } else {
                             // This is either a dish name or description
                             if (!currentDish) {
-                                // First non-section, non-price line = dish name
+                                // First non-section line = dish name (may include price)
                                 currentDish = line;
                             } else {
-                                // Subsequent lines = description
-                                dishDescription.push(line);
+                                // Check if this line looks like a new dish (starts with capital letters)
+                                const isNewDish = /^[A-Z]/.test(line) && line.length > 3;
+                                
+                                if (isNewDish && dishDescription.length === 0) {
+                                    // This might be a new dish, save the previous one
+                                    currentSection.dishes.push({
+                                        name: currentDish,
+                                        description: ''
+                                    });
+                                    currentDish = line;
+                                } else {
+                                    // This is a description line
+                                    dishDescription.push(line);
+                                }
                             }
                         }
                     }
@@ -395,8 +394,7 @@ exports.handler = async (event, context) => {
                     if (currentDish) {
                         currentSection.dishes.push({
                             name: currentDish,
-                            description: dishDescription.join(' '),
-                            price: currentPrice
+                            description: dishDescription.join(' ')
                         });
                     }
                     
