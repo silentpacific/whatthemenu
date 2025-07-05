@@ -3,19 +3,35 @@ const { ImageAnnotatorClient } = require('@google-cloud/vision');
 // Debug environment variables
 console.log('Environment check:');
 console.log('GOOGLE_VISION_API_KEY exists:', !!process.env.GOOGLE_VISION_API_KEY);
-console.log('GOOGLE_VISION_API_KEY length:', process.env.GOOGLE_VISION_API_KEY ? process.env.GOOGLE_VISION_API_KEY.length : 0);
+console.log('GOOGLE_CLOUD_PROJECT_ID exists:', !!process.env.GOOGLE_CLOUD_PROJECT_ID);
+console.log('GOOGLE_CLOUD_CLIENT_EMAIL exists:', !!process.env.GOOGLE_CLOUD_CLIENT_EMAIL);
+console.log('GOOGLE_CLOUD_PRIVATE_KEY exists:', !!process.env.GOOGLE_CLOUD_PRIVATE_KEY);
 
 // Initialize Google Cloud Vision client with proper error handling
 let vision = null;
 try {
     if (process.env.GOOGLE_VISION_API_KEY) {
+        // Use API key if available
         vision = new ImageAnnotatorClient({
             apiKey: process.env.GOOGLE_VISION_API_KEY,
             projectId: process.env.GOOGLE_CLOUD_PROJECT_ID || 'what-the-menu-auth'
         });
-        console.log('Google Vision API initialized successfully');
+        console.log('Google Vision API initialized with API key');
+    } else if (process.env.GOOGLE_CLOUD_CLIENT_EMAIL && process.env.GOOGLE_CLOUD_PRIVATE_KEY) {
+        // Use service account credentials
+        const credentials = {
+            client_email: process.env.GOOGLE_CLOUD_CLIENT_EMAIL,
+            private_key: process.env.GOOGLE_CLOUD_PRIVATE_KEY.replace(/\\n/g, '\n'),
+            project_id: process.env.GOOGLE_CLOUD_PROJECT_ID
+        };
+        
+        vision = new ImageAnnotatorClient({
+            credentials: credentials,
+            projectId: process.env.GOOGLE_CLOUD_PROJECT_ID
+        });
+        console.log('Google Vision API initialized with service account');
     } else {
-        console.log('No Google Vision API key found - using fallback OCR');
+        console.log('No Google Vision credentials found - using fallback OCR');
         vision = null;
     }
 } catch (error) {
