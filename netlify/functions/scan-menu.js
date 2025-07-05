@@ -98,7 +98,115 @@ async function fallbackOCR(buffer) {
     };
 }
 
-// Simple menu parsing - group consecutive lines into dishes
+// Parse menu using font size hierarchy from Google Vision API
+function parseMenuByFontSize(detections) {
+    if (!detections || detections.length < 2) {
+        return [{ section: 'Menu Items', dishes: [] }];
+    }
+    
+    // Skip the first annotation (contains all text)
+    const textBlocks = detections.slice(1);
+    
+    // Calculate font sizes based on bounding box heights
+    const textWithSizes = textBlocks.map(block => {
+        const vertices = block.boundingPoly.vertices;
+        const height = Math.abs(vertices[2].y - vertices[0].y);
+        return {
+            text: block.description,
+            fontSize: height,
+            y: vertices[0].y, // Top position for sorting
+            block: block
+        };
+    });
+    
+    // Sort by Y position (top to bottom)
+    textWithSizes.sort((a, b) => a.y - b.y);
+    
+    // Group by font size to identify hierarchy
+    const fontSizes = [...new Set(textWithSizes.map(item => item.fontSize))].sort((a, b) => b - a);
+    
+    // Categorize by font size (largest = heading, second = sections, third = dishes, fourth = descriptions)
+    const categories = {
+        heading: fontSizes[0] || 0,
+        sections: fontSizes[1] || fontSizes[0] || 0,
+        dishes: fontSizes[2] || fontSizes[1] || fontSizes[0] || 0,
+        descriptions: fontSizes[3] || fontSizes[2] || fontSizes[1] || fontSizes[0] || 0
+    };
+    
+    // Tolerance for font size matching (within 10% of target size)
+    const tolerance = 0.1;
+    
+    const sections = [];
+    let currentSection = { section: 'Menu Items', dishes: [] };
+    let currentDish = null;
+    let dishDescription = [];
+    
+    for (const item of textWithSizes) {
+        const text = item.text.trim();
+        if (text.length < 2) continue;
+        
+        // Skip prices and numbers
+        if (/^\$?\d+\.?\d*$/.test(text) || /^\d+\/\d+$/.test(text)) continue;
+        
+        // Determine category based on font size
+        let category = 'descriptions'; // default
+        if (Math.abs(item.fontSize - categories.heading) <= categories.heading * tolerance) {
+            category = 'heading';
+        } else if (Math.abs(item.fontSize - categories.sections) <= categories.sections * tolerance) {
+            category = 'sections';
+        } else if (Math.abs(item.fontSize - categories.dishes) <= categories.dishes * tolerance) {
+            category = 'dishes';
+        }
+        
+        if (category === 'sections') {
+            // Save current dish
+            if (currentDish) {
+                currentSection.dishes.push({
+                    name: currentDish,
+                    description: dishDescription.join(' ')
+                });
+            }
+            
+            // Start new section
+            if (currentSection.dishes.length > 0) {
+                sections.push(currentSection);
+            }
+            currentSection = { section: text, dishes: [] };
+            currentDish = null;
+            dishDescription = [];
+        } else if (category === 'dishes') {
+            // Save previous dish
+            if (currentDish) {
+                currentSection.dishes.push({
+                    name: currentDish,
+                    description: dishDescription.join(' ')
+                });
+            }
+            currentDish = text;
+            dishDescription = [];
+        } else if (category === 'descriptions' && currentDish) {
+            // Add to current dish description
+            dishDescription.push(text);
+        }
+        // Ignore headings for now (restaurant name, etc.)
+    }
+    
+    // Add the last dish
+    if (currentDish) {
+        currentSection.dishes.push({
+            name: currentDish,
+            description: dishDescription.join(' ')
+        });
+    }
+    
+    if (currentSection.dishes.length > 0) {
+        sections.push(currentSection);
+    }
+    
+    return sections;
+}
+
+// Fallback parsing for when font size info is not available
 function parseMenuSections(textLines) {
     const sections = [];
     let currentSection = { section: 'Menu Items', dishes: [] };
@@ -159,8 +267,6 @@ function parseMenuSections(textLines) {
     return sections;
 }
 
-
-
 exports.handler = async (event, context) => {
     const startTime = Date.now();
     console.log('Enhanced OCR function started');
@@ -214,11 +320,8 @@ exports.handler = async (event, context) => {
                     result = await fallbackOCR(buffer);
                 } else {
                     console.log('Text detected by Google Vision:', detections.length, 'annotations');
-                    // Extract text lines
-                    const textLines = detections.slice(1).map(block => block.description).filter(line => line.trim().length > 0);
-                    
                     // Parse into menu sections
-                    const sections = parseMenuSections(textLines);
+                    const sections = parseMenuByFontSize(detections);
                     
                     result = {
                         success: true,
