@@ -320,8 +320,57 @@ exports.handler = async (event, context) => {
                     result = await fallbackOCR(buffer);
                 } else {
                     console.log('Text detected by Google Vision:', detections.length, 'annotations');
-                    // Parse into menu sections
-                    const sections = parseMenuByFontSize(detections);
+                    
+                    // Debug: Log the raw text structure
+                    console.log('Raw text from Vision API:', detections[0]?.description);
+                    console.log('First few text blocks:', detections.slice(1, 5).map(block => ({
+                        text: block.description,
+                        bounds: block.boundingPoly?.vertices
+                    })));
+                    
+                    // For now, just return the raw text with basic line grouping
+                    const rawText = detections[0]?.description || '';
+                    const textLines = rawText.split('\n').filter(line => line.trim().length > 0);
+                    
+                    // Simple grouping: every 2-3 lines = one dish
+                    const sections = [{
+                        section: 'Menu Items',
+                        dishes: []
+                    }];
+                    
+                    let currentDish = '';
+                    let dishDescription = [];
+                    
+                    for (let i = 0; i < textLines.length; i++) {
+                        const line = textLines[i].trim();
+                        
+                        // Skip prices and numbers
+                        if (/^\$?\d+\.?\d*$/.test(line) || /^\d+\/\d+$/.test(line)) continue;
+                        
+                        if (!currentDish) {
+                            currentDish = line;
+                        } else {
+                            dishDescription.push(line);
+                            
+                            // After 1-2 description lines, create a dish
+                            if (dishDescription.length >= 1) {
+                                sections[0].dishes.push({
+                                    name: currentDish,
+                                    description: dishDescription.join(' ')
+                                });
+                                currentDish = '';
+                                dishDescription = [];
+                            }
+                        }
+                    }
+                    
+                    // Add any remaining dish
+                    if (currentDish) {
+                        sections[0].dishes.push({
+                            name: currentDish,
+                            description: dishDescription.join(' ')
+                        });
+                    }
                     
                     result = {
                         success: true,
@@ -331,7 +380,7 @@ exports.handler = async (event, context) => {
                             userId: userId || '',
                             scanId: 'temp_' + Date.now(),
                             processingTime: Date.now() - startTime,
-                            rawText: detections[0]?.description || '',
+                            rawText: rawText,
                             confidence: 85,
                             source: 'google-vision',
                             totalDishes: sections.reduce((sum, section) => sum + section.dishes.length, 0),
