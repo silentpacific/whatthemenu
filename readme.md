@@ -22,6 +22,7 @@ AI-powered menu scanner and translator for confident dining worldwide.
 - **Frontend**: HTML5, CSS3, JavaScript (Vanilla)
 - **Backend**: Netlify Functions
 - **AI**: OpenAI GPT-4 Vision
+- **OCR**: Google Cloud Vision API
 - **Payments**: Stripe
 - **Database**: Supabase
 - **Hosting**: Netlify
@@ -33,15 +34,45 @@ AI-powered menu scanner and translator for confident dining worldwide.
 Add these to your Netlify dashboard under Site Settings > Environment Variables:
 
 ```bash
-OPENAI_API_KEY=your-openai-api-key
+# Required for OCR functionality
+GOOGLE_VISION_API_KEY=your-google-vision-api-key
+GOOGLE_CLOUD_PROJECT_ID=your-google-cloud-project-id
+
+# Alternative: Use service account credentials
+GOOGLE_APPLICATION_CREDENTIALS=path/to/service-account-key.json
+
+# Required for database
 SUPABASE_URL=your-supabase-project-url
 SUPABASE_ANON_KEY=your-supabase-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
+
+# Required for payments
 STRIPE_PUBLISHABLE_KEY=your-stripe-publishable-key
 STRIPE_SECRET_KEY=your-stripe-secret-key
+
+# Required for AI explanations
+OPENAI_API_KEY=your-openai-api-key
 ```
 
-### 2. Supabase Database Setup
+### 2. Google Cloud Vision API Setup
+
+#### Option A: API Key (Recommended for Netlify)
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Create a new project or select existing one
+3. Enable the Cloud Vision API
+4. Go to APIs & Services > Credentials
+5. Create an API Key
+6. Add it as `GOOGLE_VISION_API_KEY` in Netlify
+7. Add your project ID as `GOOGLE_CLOUD_PROJECT_ID`
+
+#### Option B: Service Account (For local development)
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Go to APIs & Services > Credentials
+3. Create a Service Account
+4. Download the JSON key file
+5. Add the file path as `GOOGLE_APPLICATION_CREDENTIALS`
+
+### 3. Supabase Database Setup
 
 Create these tables in your Supabase project:
 
@@ -57,15 +88,21 @@ CREATE TABLE users (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Scans table
-CREATE TABLE scans (
+-- Menu scans table
+CREATE TABLE menu_scans (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID REFERENCES users(id),
-  original_text TEXT,
-  translated_text TEXT,
-  source_language VARCHAR(10),
-  target_language VARCHAR(10),
-  image_url TEXT,
+  session_id VARCHAR(255),
+  tier VARCHAR(50) DEFAULT 'free',
+  menu_json JSONB,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Dishes table for explanations
+CREATE TABLE dishes (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  explanation TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
@@ -81,7 +118,7 @@ CREATE TABLE payments (
 );
 ```
 
-### 3. API Keys Setup
+### 4. API Keys Setup
 
 #### OpenAI
 1. Go to [OpenAI Platform](https://platform.openai.com/api-keys)
@@ -132,9 +169,22 @@ netlify deploy --prod
 │   └── main.js
 └── netlify/
     └── functions/         # Serverless functions
-        ├── scan-menu.js
+        ├── scan-menu-simple.js
+        ├── scan-menu-google.js
+        ├── get-dish-explanation.js
         └── create-payment.js
 ```
+
+## Troubleshooting
+
+### OCR Not Working (502 Error)
+1. Check that `GOOGLE_VISION_API_KEY` is set in Netlify environment variables
+2. Verify your Google Cloud project has the Vision API enabled
+3. Ensure your API key has the necessary permissions
+4. Check Netlify function logs for detailed error messages
+
+### Fallback Mode
+If Google Vision API is not configured, the app will use a fallback OCR that returns sample menu items for testing purposes.
 
 ## Support
 
