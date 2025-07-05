@@ -332,9 +332,12 @@ exports.handler = async (event, context) => {
                     const rawText = detections[0]?.description || '';
                     const textLines = rawText.split('\n').filter(line => line.trim().length > 0);
                     
+                    console.log('Parsing text lines:', textLines.length);
+                    
                     const sections = [];
                     let currentSection = { section: 'Menu Items', dishes: [] };
                     let currentDish = '';
+                    let currentPrice = '';
                     let dishDescription = [];
                     
                     for (let i = 0; i < textLines.length; i++) {
@@ -343,17 +346,29 @@ exports.handler = async (event, context) => {
                         // Skip empty lines
                         if (line.length === 0) continue;
                         
+                        console.log(`Processing line ${i}: "${line}"`);
+                        
                         // Check if this is a section header (starts with - or is all caps and short)
                         const isSectionHeader = line.startsWith('-') || 
                                               (line === line.toUpperCase() && line.length > 2 && line.length < 25 && !line.includes(' '));
                         
+                        // Check if this line contains a dish name with price (e.g., "DISH NAME 12")
+                        const dishWithPriceMatch = line.match(/^(.+?)\s+(\d+)$/);
+                        
+                        // Check if this is just a price (e.g., "12")
+                        const isJustPrice = /^\d+$/.test(line);
+                        
                         if (isSectionHeader) {
-                            // Save current dish
+                            console.log(`Found section header: "${line}"`);
+                            
+                            // Save current dish before starting new section
                             if (currentDish) {
                                 currentSection.dishes.push({
                                     name: currentDish,
+                                    price: currentPrice,
                                     description: dishDescription.join(' ')
                                 });
+                                console.log(`Saved dish: "${currentDish}" with price "${currentPrice}" and description "${dishDescription.join(' ')}"`);
                             }
                             
                             // Start new section
@@ -365,25 +380,53 @@ exports.handler = async (event, context) => {
                             const cleanSectionName = line.replace(/^[- ]+/, '').replace(/[- ]+$/, '');
                             currentSection = { section: cleanSectionName, dishes: [] };
                             currentDish = '';
+                            currentPrice = '';
                             dishDescription = [];
+                        } else if (dishWithPriceMatch) {
+                            // This line has both dish name and price
+                            console.log(`Found dish with price: "${dishWithPriceMatch[1]}" - "${dishWithPriceMatch[2]}"`);
+                            
+                            // Save previous dish if exists
+                            if (currentDish) {
+                                currentSection.dishes.push({
+                                    name: currentDish,
+                                    price: currentPrice,
+                                    description: dishDescription.join(' ')
+                                });
+                                console.log(`Saved previous dish: "${currentDish}"`);
+                            }
+                            
+                            // Start new dish
+                            currentDish = dishWithPriceMatch[1].trim();
+                            currentPrice = dishWithPriceMatch[2];
+                            dishDescription = [];
+                        } else if (isJustPrice) {
+                            // This is just a price, associate with current dish
+                            console.log(`Found price: "${line}"`);
+                            currentPrice = line;
                         } else {
-                            // This is either a dish name or description
+                            // This is either a dish name without price or a description
                             if (!currentDish) {
-                                // First non-section line = dish name (may include price)
+                                // First non-section, non-price line = dish name
+                                console.log(`Found dish name: "${line}"`);
                                 currentDish = line;
                             } else {
-                                // Check if this line looks like a new dish (starts with capital letters)
-                                const isNewDish = /^[A-Z]/.test(line) && line.length > 3;
+                                // Check if this looks like a new dish (starts with capital letters and is short)
+                                const isNewDish = /^[A-Z]/.test(line) && line.length > 3 && line.length < 50 && !line.includes(',');
                                 
                                 if (isNewDish && dishDescription.length === 0) {
                                     // This might be a new dish, save the previous one
+                                    console.log(`Found new dish, saving previous: "${currentDish}"`);
                                     currentSection.dishes.push({
                                         name: currentDish,
+                                        price: currentPrice,
                                         description: ''
                                     });
                                     currentDish = line;
+                                    currentPrice = '';
                                 } else {
                                     // This is a description line
+                                    console.log(`Adding description: "${line}"`);
                                     dishDescription.push(line);
                                 }
                             }
@@ -394,13 +437,17 @@ exports.handler = async (event, context) => {
                     if (currentDish) {
                         currentSection.dishes.push({
                             name: currentDish,
+                            price: currentPrice,
                             description: dishDescription.join(' ')
                         });
+                        console.log(`Saved final dish: "${currentDish}" with price "${currentPrice}"`);
                     }
                     
                     if (currentSection.dishes.length > 0) {
                         sections.push(currentSection);
                     }
+                    
+                    console.log('Final sections:', JSON.stringify(sections, null, 2));
                     
                     result = {
                         success: true,
