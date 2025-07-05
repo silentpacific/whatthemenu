@@ -788,7 +788,7 @@
                 
                 document.getElementById('dish-count').textContent = dishCount;
                 document.getElementById('source-language').textContent = 
-                    this.resultsData.sourceLanguage || 'Unknown';
+                    this.resultsData.source || 'Unknown';
                 document.getElementById('processing-time').textContent = 
                     Math.round((this.resultsData.processingTime || 0) / 1000);
             }

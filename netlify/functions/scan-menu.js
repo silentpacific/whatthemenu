@@ -1,5 +1,10 @@
 const { ImageAnnotatorClient } = require('@google-cloud/vision');
 
+// Debug environment variables
+console.log('Environment check:');
+console.log('GOOGLE_VISION_API_KEY exists:', !!process.env.GOOGLE_VISION_API_KEY);
+console.log('GOOGLE_VISION_API_KEY length:', process.env.GOOGLE_VISION_API_KEY ? process.env.GOOGLE_VISION_API_KEY.length : 0);
+
 // Initialize Google Cloud Vision client with proper error handling
 let vision = null;
 try {
@@ -119,6 +124,7 @@ function parseMenuSections(textLines) {
 exports.handler = async (event, context) => {
     const startTime = Date.now();
     console.log('Enhanced OCR function started');
+    console.log('Vision client available:', !!vision);
     
     const headers = {
         'Access-Control-Allow-Origin': '*',
@@ -167,6 +173,7 @@ exports.handler = async (event, context) => {
                     console.log('No text detected by Google Vision, using fallback');
                     result = await fallbackOCR(buffer);
                 } else {
+                    console.log('Text detected by Google Vision:', detections.length, 'annotations');
                     // Extract text lines
                     const textLines = detections.slice(1).map(block => block.description).filter(line => line.trim().length > 0);
                     
